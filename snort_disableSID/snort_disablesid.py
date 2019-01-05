@@ -36,7 +36,8 @@ def Alert_parseR():
 		with open(o, 'w+') as outf:
 			for alerT in rL:
 				if(s in alerT):
-					sList.append(alerT)
+					if ('#' not in alerT):
+						sList.append(alerT)
 			for alerT in sList:			
 				msG = re.findall(regmsG, alerT)[0]
 				siD = re.findall(regsiD, alerT)[0]
