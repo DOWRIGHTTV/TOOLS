@@ -288,8 +288,28 @@ def finaLize1():
 	print('=========================================================')
 	subprocess.call(['sudo', 'so-start'], stdout = DEVNULL)
 	print('Navigate to https://localhost/squert to start viewing alerts.')
-	exit(3)	
-	
+	finaLize2()
+
+def finaLize2():
+	answer = input('Will you be accessing from a different PC? [Y/n]: ')
+	if (answeR == 'y' or answeR == ''):
+		uFWset()
+	elif (answeR == 'n'):
+		finaLize2()
+	else:
+		print('Invalid entry. Try again')
+		finaLize2()
+
+def uFWset():
+	try:
+		subprocess.call(['sudo', 'ufw', 'enable'], stdout = DEVNULL)
+		subprocess.call(['sudo', 'ufw', 'allow', 'in', '443/tcp'], stdout = DEVNULL)
+		subprocess.call(['sudo', 'ufw', 'allow', 'in', '22/tcp'], stdout = DEVNULL)	
+		print('TCP/443 (HTTPS) and TCP/22 (SSH) in firewall')
+		exit(3)
+	except Exception as E:
+		print('Error configuring firewall. Manually enable/configure UFW')
+		
 if __name__ == '__main__':
 	try:
 		priV = os.geteuid()

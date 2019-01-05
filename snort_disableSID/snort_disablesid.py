@@ -1,8 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 
 import re
-sRL = 'dl.rules'
 import argparse
 from sys import argv
 
@@ -45,8 +44,6 @@ def Alert_parseR():
 					print(('Adding 1:%s # %s' % (siD, msG)))
 				if (o):
 					outf.write(('1:%s # %s\n' % (siD, msG)))
-
-			
 
 if __name__ == '__main__':
 	try:
