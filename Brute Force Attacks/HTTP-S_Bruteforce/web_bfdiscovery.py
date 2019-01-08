@@ -9,7 +9,6 @@ def Disc(urL):
 	cVList = []
 	with session() as c:	
 		resultS = c.get(urL)
-#		htmL = urllib2.urlopen(urL)
 		if 'WWW-Authenticate' in resultS.headers:
 			pass
 		elif 'WWW-Authenticate' not in resultS.headers:
@@ -20,18 +19,13 @@ def Disc(urL):
 			for credVal in inpuT:
 				try:
 					cVal = credVal.get('id')
-					if 'err_msg' in cVal:
-						pass
-					elif (Q <= 1):
+					if (Q <= 1):
 						cVList.append(cVal)
 #						print(cVList)
 						Q = Q + 1
+					elif 'err_msg' in cVal:
+						pass
 				except Exception as OHGOSH:
 					continue
-#				else:
-#					print('else')
-#					continue
 		return akVal, cVList	
-
-
 
