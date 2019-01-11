@@ -13,10 +13,10 @@ def edit(snO):
     # initialize the OrderedDict to hold empty lists so we can hold user inputs later
 	for serv in servList:
 		sList[serv] = ''
-	print('1. DNS   5. TELNET')
-	print('2. SMTP  6. SSH')
-	print('3. HTTP  7. FTP')
-	print('4. SQL   8. SIP')
+	print('[1] DNS   [5] TELNET')
+	print('[2] SMTP  [6] SSH')
+	print('[3] HTTP  [7] FTP')
+	print('[4] SQL   [8] SIP')
 	sList = collections.OrderedDict(sList)
 	options = []
 	while True:

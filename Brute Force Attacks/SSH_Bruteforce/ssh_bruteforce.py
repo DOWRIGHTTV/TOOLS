@@ -4,7 +4,7 @@ import paramiko, sys, os, socket
 import time
 import re
 
-from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing import Pool as ThreadPool
 import itertools
 
 
