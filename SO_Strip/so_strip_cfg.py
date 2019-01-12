@@ -169,9 +169,9 @@ class SystemTasks:
 		print('Creating Backup files')
 		try:
 			for file in self.iS.fileS:
-				subprocess.call(['cp', file, file + '.bak'], stdout = self.DEVNULL)
+				subprocess.call(['sudo', 'cp', file, file + '.bak'], stdout = self.DEVNULL)
 		# TOGGLE FOR INSTANT DELETION OF BACKUP FILES##
-			subprocess.call(['rm', file + '.bak'], stdout = self.DEVNULL)
+#			subprocess.call(['rm', file + '.bak'], stdout = self.DEVNULL)
 		except Exception as E:
 			print('Error creating backup files. OH well...LOL')
 
