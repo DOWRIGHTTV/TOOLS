@@ -8,156 +8,141 @@ import subprocess
 
 import time
 import datetime
-from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing import Pool as ThreadPool
 import itertools
+
+import random
 
 from netaddr import IPNetwork
 
 ts = time.time()
 dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
 i = 0
 
-##--------------------------------------------------------------------------------##
-## Section X: Ping Sweep                                                          ##
-##--------------------------------------------------------------------------------##
-## Primary Ping Sweep Code ##
-def Init():
-	targetList = input('Name output file: ')
-	if os.path.isfile (targetList):
-		print('File already Exists. Please Try Again.')
-		Init()
-	else:
-		iPRange(targetList)
-def iPRange(targetList):	
-	target_ip = input('Enter IP RANGE. ex. 192.168.1.0/24: ')
-	iPRange2(target_ip, targetList)
+class Main:
+	def __init__(self):
+		Gl = General()
+		aS = Assembling(Gl)
+		PoolCreate(aS.tarGetIP, aS.total, aS.threadCount, Gl.resultsList)
+		Gl.Final()
 
-def iPRange2(target_ip, targetList):
-##section for calculating number of IPs##
-	subnetstr = target_ip.strip()
-	if subnetstr.endswith('/24'):
-		total2 = 256
-	elif subnetstr.endswith('/25'):
-		total2 = 128
-	elif subnetstr.endswith('/26'):
-		total2 = 64
-	elif subnetstr.endswith('/27'):
-		total2 = 32
-	elif subnetstr.endswith('/28'):
-		total2 = 16
-	elif subnetstr.endswith('/29'):
-		total2 = 8
-	elif subnetstr.endswith('/30'):
-		total2 = 4
-	elif subnetstr.endswith('/31'):
-		total2 = 2
-	else:
-	    print('supports /24+ only')
-	    iPRange(targetList)
-	Netmask_Breakdown(total2, target_ip, targetList)
+class General:
+	def __init__(self):
+		self.OutFile()
+		self.TargRange()
+
+	def OutFile(self):
+		self.resultsList = input('Name output file: ')
+		if os.path.isfile (self.resultsList):
+			print('File already Exists. Please Try Again.')
+			self.OutFile()
+			
+	def TargRange(self):	
+		self.targ_ipR = input('Enter IP RANGE. ex. 192.168.1.0/24: ')
+		answeR = input('{} Selected. Confirm? [Y/n]: '.format(self.targ_ipR))
+		if (answeR == 'y' or answeR == ''):
+			return()
+		else:
+			self.TargRange()
 		
-def tPools(total2, targetList):
-	threadCounT = total2/3
-	threadCount = int(threadCounT)
-	print(('%s %s%s%s' % ('Using Optimal Threads', '[', threadCount, '].')))
-	multiProc(total2, targetList, threadCount)
+	#end of scan#
+	def Final(self):
+		viewSResults = input('View results? [Y/n]: ')
+		if (viewSResults == 'y' or viewSResults == ''):
+			with open(self.resultsList) as F:	   
+#				F.seek(0)
+				print('||The following HOSTS responded||')
+				print("---------------------------------")
+				for linE in F:
+					if (linE == None):
+						print('||No Hosts Responded :((||')
+						os.remove(self.resultsList)
+					else:
+						print((str(linE).strip()))		
+		elif (viewSResults == 'n'):
+			exit(3)
+		else:
+			print('Invalid Entry. Try again')
+			self.Final()
+
+class Assembling:
+	def __init__(self, Gl):
+		self.Gl = Gl
+		self.tarGetIP = []
+		self.Subnet_Calc()
+		self.tPools_Calc()
+		self.TargList_Assemble()
 		
-def Netmask_Breakdown(total2, target_ip, targetList):
-	Q = 1
-#	host_temP = open('host_temp1!@#!', 'a+')
-	with open('host_temp1!@#!', 'a+') as host_temP:
-		for subhostIP in IPNetwork(target_ip):
+	##calculating thread pools##  
+	def tPools_Calc(self):
+		tC = self.total/3
+		self.threadCount = int(tC)
+		print(('Using Optimal Threads %s%s%s' % ('[', self.threadCount, '].')))	
+
+	##calculating number of IPs##   
+	def Subnet_Calc(self): 
+		subnetstr = self.Gl.targ_ipR.strip()
+		if (subnetstr.endswith('/24')):
+			self.total = 256
+		elif (subnetstr.endswith('/25')):
+			self.total = 128
+		elif (subnetstr.endswith('/26')):
+			self.total = 64
+		elif (subnetstr.endswith('/27')):
+			self.total = 32
+		elif (subnetstr.endswith('/28')):
+			self.total = 16
+		elif (subnetstr.endswith('/29')):
+			self.total = 8
+		elif (subnetstr.endswith('/30')):
+			self.total = 4
+		elif (subnetstr.endswith('/31')):
+			self.total = 2
+		else:
+			print('supports /24+ only')
+			exit(0)
+
+	def TargList_Assemble(self):
+		Q = 1
+		for subhostIP in IPNetwork(self.Gl.targ_ipR):
 			if (Q == 1):
 				Q = Q + 1
 				pass
-			else:		
-				host_temP.write('%s \n' % (subhostIP))
-	tPools(total2, targetList)
+			elif (Q >= int(self.total)):
+				pass
+			else:	
+				self.tarGetIP.append(subhostIP)
 
-	
-def multiProc(total2, targetList, threadCount):
-	pooL = ThreadPool(threadCount)
-	tarGetIP = []
-	with open('host_temp1!@#!') as BANG:		
-		total2 = total2 - 1
-		for entrY in BANG:
-			tarGetIP.append(entrY)
-			pass
-	SweepResults = pooL.map( PSweep, zip(tarGetIP, itertools.repeat(total2)))
-	with open(targetList, 'w+') as blah2:
+
+def PoolCreate(tarGetIP, tT, tC, resultsList):
+	pooL = ThreadPool(tC)
+	print('Scanning IP Range...')
+	SweepResults = pooL.map( PSweep, zip(tarGetIP, itertools.repeat(tT)))		
+	with open(resultsList, 'w+') as rL:
 		for resIP, statuS in SweepResults:
 			if (statuS == 0):
-					blah2.write('%s \n' % (resIP))		
+				rL.write('%s \n' % (resIP))		
 			else:
 				pass
-	pooL.close()
-	pooL.join()
-	PSFinal(targetList)
-	
-## loop for subnet masks
+				
 def PSweep(cB):
 	global i
-	tarGetIP = cB[0].strip()
-	total2 = cB[1]
 	DEVNULL = open(os.devnull, 'wb')
-	res = subprocess.call(['ping', '-c', '1', str(tarGetIP)], stdout = DEVNULL)
-	i = i + 1
-	progress(i, total2)
-	return tarGetIP, res
-## Option to view results ##
-def PSFinal(targetList):
-	viewSResults = input("\nView results? Y or N: ")
-	if (viewSResults == 'y'):
-		with open(targetList) as F:	   
-			F.seek(0)
-			print('||The following HOSTS responded||')
-			print("---------------------------------")
-			for linE in F:
-				if (linE == None):
-					print('||No Hosts Responded :((||')
-					os.remove(targetList)
-				else:
-					print((str(linE).strip()))		
-	elif (viewSResults == 'n'):
-		PSClose()
-	else:
-		print("Select Y or N.")
-		PSweep2()
-	PSClose()
-##Exit program portion##
-def PSClose():
-	os.remove('host_temp1!@#!')
-	print("--------------------------------------------------------")
-	print('Exiting Ping Sweep v2 by JOE MAMA')
-	print("--------------------------------------------------------")
-	exit()
-##---------------------------------------------------------------------------------##
-##Section 4: Progress BAR MAIN                                                     ##
-##---------------------------------------------------------------------------------##
-def progress(count, total):
-		bar_len = 42
-		filled_len = int(round(bar_len * count / float(total)))
-		percents = round(100.0 * count / float(total), 1)
-		bar = '#' * filled_len + '=' * (bar_len - filled_len)
-		space = '{message: <0}'.format(message='')
-		time2 = time.ctime()
-		sys.stdout.write('%s %s %s [%s] %s%s\r' % (time2, '||', space, bar, percents, '%'))
-		sys.stdout.flush()
-##---------------------------------------------------------------------------------##
-## Section 7: Initialization                                                       ##
-##---------------------------------------------------------------------------------##
+	tarGetIP, tT = cB
+	print(tarGetIP)
+	try:
+		res = subprocess.call(['ping', '-c', '1', str(tarGetIP)], stdout = DEVNULL)	
+		return tarGetIP, res
+	except Exception as E:
+		pass
+			
+
+
 if __name__ == '__main__':
 	try: 
-		Init()
+		Main()
 	except Exception as E:
 		print(E)
-		try:
-			os.remove('host_temp1!@#!')
-		except Exception as Z:
-			pass
 	except KeyboardInterrupt:
-		try:
-			os.remove('host_temp1!@#!')
-		except Exception as Z:
-			pass
-			print("\n--------------------------------------------------------")
+		print("\n--------------------------------------------------------")

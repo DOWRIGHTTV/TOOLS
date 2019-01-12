@@ -9,10 +9,10 @@ import requests
 
 
 parser = argparse.ArgumentParser(description = 'Searches downloaded SNORT rules and process disable entries')
+parser.add_argument('-v', '--verbose', help='prints output to screen', action='store_true')
+parser.add_argument('-o', '--out', help='output file name')
 parser.add_argument('-f', '--file', help='snort rules file input', required=True)
 parser.add_argument('-s', '--string', help='string to look for eg. SSH', required=True)
-parser.add_argument('-o', '--out', help='output file name')
-parser.add_argument('-v', '--verbose', help='prints output to screen', action='store_true')
 	
 args = parser.parse_args(argv[1:])
 
