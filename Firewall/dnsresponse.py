@@ -20,7 +20,7 @@ import array
 
 class DNS_Response:
 	def __init__(self, packet):
-		self.iF = 'eth0'
+		self.iF = 'enp0s8'
 		self.ip = IPPacket(packet)
 		
 		self.s = socket.socket(AF_PACKET, SOCK_RAW)
@@ -29,11 +29,11 @@ class DNS_Response:
 		self.response()
 
 	def response(self):
-		self.ip.assemble_eth_fields()
-		self.ip.assemble_ipv4_fields()
-		self.ip.assemble_udp()
-		self.ip.assemble_dns_fields()
 		self.ip.assemble_QueryR_fields()
+		self.ip.assemble_dns_fields()
+		self.ip.assemble_udp()
+		self.ip.assemble_ipv4_fields()
+		self.ip.assemble_eth_fields()
 		
 		complete =  self.ip.raw1 + self.ip.raw2 + self.ip.raw3  + self.ip.raw4 + self.ip.raw5
 		self.s.send(complete)
@@ -44,12 +44,12 @@ class IPPacket:
 	def __init__(self, packet):
 		self.packet = packet
 		self.split_packet()
+		self.create_QueryR_fields()
+		self.create_dns_fields()
+		self.create_udp_fields()
 		self.create_ipv4_fields_list()
 		self.ipv4H = self.assemble_ipv4_fields()
 		self.ip_chk = self.cksum(self.ipv4H)
-		self.create_udp_fields()
-		self.create_dns_fields()
-		self.create_QueryR_fields()
 
 	
 	def split_packet(self):
@@ -100,7 +100,7 @@ class IPPacket:
 		ip_ecn = 0
 		self.ip_dfc = (ip_dsc << 2 ) + ip_ecn
 		
-		self.ip_tol = 46		 # ---- [ Total Length]		
+		self.ip_tol = 20 + self.udp_len	 # ---- [ Total Length]		
 		self.ip_idf = 0	 # ---- [ Identification ]		
 		ip_rsv = 0			 # ---- [ Flags ]
 		ip_dtf = 0
@@ -116,15 +116,19 @@ class IPPacket:
 		return
 	
 	def assemble_ipv4_fields(self):
-		self.raw2 = struct.pack('!BBHHHBBH4s4s' , 
+		self.raw2 = struct.pack('!BBHHHBB' ,
 		self.ip_ver,		# IP Version 
 		self.ip_dfc,		# Differentiate Service Field
 		self.ip_tol,		# Total Length
 		self.ip_idf,		# Identification
 		self.ip_flg,		# Flags
 		self.ip_ttl,		# Time to leave
-		self.ip_proto,		# protocol
-		self.ip_chk,		# Checksum
+		self.ip_proto	    # protocol
+        )	
+		self.raw2 += struct.pack('<H' ,
+		self.ip_chk         # Checksum
+        )
+		self.raw2 += struct.pack('!4s4s' ,
 		self.ip_saddr,		# Source IP 
 		self.ip_daddr		# Destination IP
 		)
@@ -133,10 +137,11 @@ class IPPacket:
 ## -- L4 - UDP Section ---- ##			
 	def create_udp_fields(self):			
 		self.udp_sport = 53  # ---- [ Source Port]		
-		self.udp_dport = self.sport	# ---- [ Destination Port ]		
-		self.udp_len = 26		# ---- [ Total Length ]		
+		self.udp_dport = self.dport	# ---- [ Destination Port ]		
+		self.udp_len = self.dnsL + 8 + 6		# ---- [ Total Length ]		
 		self.udp_chk = 0		# ---- [ Check Sum ]
-		
+#		print(self.udp_len)
+
 	def assemble_udp(self):
 		self.raw3 = struct.pack('!HHHH' ,
 		self.udp_sport,		 # IP Version 
@@ -160,10 +165,12 @@ class IPPacket:
 		self.ancount   = 1
 		self.nscount   = 0
 		self.arcount   = 0
+		self.dnsL = self.dnsRL + 12
+#       
 		
 	def assemble_dns_fields(self):
-		self.p1 = (self.qr << 0) | (self.opcode << 1) | (self.aa << 2) | (self.tc << 3) | (self.rd << 7)
-		self.p2 = (self.ra << 0) | (self.z << 4) | (self.ad << 5) | (self.cd << 6) | (self.rcode << 7)
+		self.p1 = (self.qr << 7) | (self.opcode << 3) | (self.aa << 2) | (self.tc << 1) | (self.rd << 0)
+		self.p2 = (self.ra << 7) | (self.z << 6) | (self.ad << 5) | (self.cd << 4) | (self.rcode << 0)
 		  
 		self.raw4 = struct.pack('!H2B4H' ,
 		self.id,
@@ -178,48 +185,43 @@ class IPPacket:
 	def create_QueryR_fields(self):
 	 ###[ DNS Question Record ]###
 		self.qname	 = self.url
-		self.qtype	 = 251
+		self.qtype	 = 1
 		self.qclass	= 1
-
+        
 	 ###[ DNS Resource Record ]###
 		self.rrname	= self.url
-		self.type	  = 251
+		self.type	  = 1
 		self.rclass	= 1
-		self.ttl	   = 146
+		self.ttl	   = 3600
 		self.rdlen	 = 4
-		self.rdata	 = inet_aton('192.168.10.1')
-		self.ns		= None
-		self.ar		= None
+		self.rdata	 = inet_aton('192.168.83.3')
+		self.urlTTL = len(self.url) + len(self.url)
+		self.dnsRL = self.urlTTL  + 14 + 2
 		
 	def assemble_QueryR_fields(self):
 	 ###[ DNS Question Record ]###
+		print(self.url)
 		split_url = self.url.split(".")
 		self.urlpack = b''
 		for part in split_url: # iterate (2) for madd and org
 			self.urlpack += struct.pack("B", len(part))
 			for char in part:
 				self.urlpack += struct.pack("B", ord(char))
-#		print(self.urlpack)          
-		self.raw5 = self.urlpack + struct.pack('!2H' ,
+		self.urlpack = self.urlpack + b'\x00'
+		self.urlpack = self.urlpack + struct.pack('!2H' ,
 		self.qtype,
 		self.qclass
 		)
-		self.raw5 = self.urlpack + struct.pack('!2HLH4s' , 
-	 ###[ DNS Resource Record ]###
-		self.type,
-		self.rclass,
+		self.urlpack += self.urlpack
+#		print(self.urlpack)
+	 ###[ DNS Resource Record ]###        
+		self.raw5 = self.urlpack + struct.pack('!LH4s' , 
 		self.ttl,
 		self.rdlen,
 		self.rdata
 		)
-		
-		#self.ns,
-		#self.ar
-		#)
-		                
-#			for byte in bytes(part, 'utf8'):
-#				print(byte)
-#				self.urlpack += struct.pack("c", byte)    
+		print(self.raw5)
+
 		
 		
 		

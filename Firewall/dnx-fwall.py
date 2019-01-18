@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import os
+import libcheck as lcheck
+import basicCFG as CFG
 
 class Main_Start:
 	def __init__(self):
@@ -14,9 +16,13 @@ class Main_Start:
 	def Main(self):
 		self.answeR = input('Select option: ')
 		if (int(self.answeR) == 1):
-			soC.Main()
+			lcheck.main()
 		elif (int(self.answeR) == 2):
-			soR.SOReset()
+			CFG.main()
+		elif (int(self.answeR) == 3):
+			exit(3)
+		elif (int(self.answeR) == 4):
+			exit(3)
 		else:
 			print('Not a valid selection. Try again.')
 			self.Main()
