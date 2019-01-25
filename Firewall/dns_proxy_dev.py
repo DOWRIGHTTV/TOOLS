@@ -8,30 +8,25 @@ import subprocess
 import sniffer as sniff
 import dnsresponse as DNR
 import os
+import time
+from config import HOMEDIR, INIFACE
 
 import argparse
 from sys import argv
 
-parser = argparse.ArgumentParser(description = 'DNS PROXY. GOGO.')
-parser.add_argument('-i', '--iface', help='interface to listen on', required=True)
-	
-args = parser.parse_args(argv[1:])
 
-iface = args.iface
-
-
-class WebFilter:
-    def __init__(self, iface):
+class DNSProxy:
+    def __init__(self, iface, homedir):
+        self.homedir = homedir
         self.iface = iface
         self.DEVNULL = open(os.devnull, 'wb')
-        self.build_filter = "dst port 53"
         self.urldict = {}
         
         self.dictload()
         self.sniffer()
     
     def dictload(self):
-        with open('Blacklist', 'r') as BL:
+        with open('{}/domainlists/Malicious.domains'.format(self.homedir), 'r') as BL:
             while True:
                 urlT = BL.readline().strip().lower()
                 if (not urlT):
@@ -53,9 +48,10 @@ class WebFilter:
     def sniffer(self):
         
         self.sn = sniff.Sniffer(self.iface, AK=self.url_check)
-        
+       
     def url_check(self, packet):
         p = packet
+        start = time.time()
         try:
             reQ = p.qname
             if ('www' not in reQ):
@@ -65,7 +61,9 @@ class WebFilter:
                 urL = self.urldict[reQ][0]
                 if (self.urldict[reQ][2] == 0):
                     self.urldict[reQ][2] += 1
-                    subprocess.call(['sudo', 'iptables', '-I', 'FORWARD', '-m', 'string', '--hex-string', urL, '--algo', 'bm', '-j', 'DROP'])
+                    subprocess.call(['sudo', 'iptables', '-I', 'MALICIOUS', '-m', 'string', '--hex-string', urL, '--algo', 'bm', '-j', 'DROP'])
+                    end = time.time()
+                    print(end - start)
                     DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall'.format(reQ))
                 else:
@@ -74,7 +72,29 @@ class WebFilter:
                     DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall. already blocked.'.format(reQ))
         except Exception as E:
-            pass
+            pass      
+#       return
         
-        return
-WebFilter(iface)
+        
+class Start:
+    def __init__(self):
+#        with open('config.py', 'r') as CFG:
+            
+#            for line in CFG:
+#               if ('INIFACE=' in line):
+#                    iface = line[9:].strip('\n"')
+#            CFG.seek(0)
+#            for line in CFG:
+#                if ('HOMEDIR=' in line):
+#                    homedir = line[9:].strip('\n"')
+        DNSProxy(INIFACE, HOMEDIR)
+        
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description = 'DNS PROXY. GOGO.')
+    parser.add_argument('-i', '--iface', help='interface to listen on', required=True)
+	
+    args = parser.parse_args(argv[1:])
+
+    iface = args.iface
+
+    WebFilter(iface)

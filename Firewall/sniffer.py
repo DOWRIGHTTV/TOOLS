@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from socket import *
+from config import INIFACE
 import struct
 import binascii
 import codecs
@@ -14,7 +15,8 @@ class Sniffer:
         
         self.sniffer()
         
-    def sniffer(self):        
+    def sniffer(self):
+        print('Sniffing on: {}'.format(self.iface))
         while True:
             self.data, self.addr = self.s.recvfrom(1024)
             packet = Packet(self.data, self.addr)
@@ -34,9 +36,7 @@ class Packet:
                 self.ip()
                 self.ethernet()
         else:
-            pass
-        
-
+            pass        
                 
     def ethernet(self):   
         s = []
@@ -96,9 +96,5 @@ class Packet:
 #        print(self.qname)
 #        print(self.qtype)
 #        print('---------------')
-     
-        
-        
-        
-        
+      
         
