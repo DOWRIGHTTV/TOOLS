@@ -1,0 +1,67 @@
+#!/usr/bin/python3
+
+import os
+from socket import *
+import struct
+import traceback
+import time
+
+
+
+class DNS_Server:
+    def __init__(self):
+#        tmp = os.getenv("DNS_LISTEN", "192.168.5.135:53")
+#        self.laddr, _, lport = tmp.partition(":")
+#        self.lport = int(lport)
+        self.laddr = '192.168.83.3'
+        self.qaddr = '192.168.2.78'
+        self.lport = 53
+        
+        self.sock = socket(AF_INET, SOCK_DGRAM)
+        self.sock.bind((self.laddr, self.lport))
+
+        self.sock2 = socket(AF_INET, SOCK_DGRAM)
+        self.DNS_LandR()                   
+
+    def DNS_LandR(self):
+
+        # listen for UDP datagrams
+        print('[+] Listening -> {}:{}'.format(self.laddr, self.lport)) 
+        while True:
+            # receive and parse query
+            self.data, self.addr = self.sock.recvfrom(1024)
+            start = time.time()
+            try:
+                self.parse_init_query(self.data)
+                if (self.qtype == b'\x01'):
+                    time.sleep(.1)
+#                    self.sock2.bind((self.qaddr, self.sport)) # THIS IS FUCKED - DONT NEED
+                    self.sock2.sendto(self.data, ('208.67.222.222', 53))
+                    print('Request relayed')
+                    self.data2, self.addr2 = self.sock2.recvfrom(1024)
+                    print('Request recieved')
+                    self.sock.sendto(self.data2, self.addr)
+                    print('--------------------------')
+                    print(self.data2)
+                    end = time.time()
+                    print(end - start)
+                    print('--------------------------')
+                else:
+                    pass
+            except Exception as E:
+                continue           
+
+    def parse_init_query(self, data):
+        header = data[:12]
+        self.payload = data[12:]
+        tmp = struct.unpack(">6H", header)
+        j = self.payload.index(0) + 1 + 4
+        self.qtype = self.payload[j-3:j-2]
+
+
+if __name__ == "__main__":
+    try:
+        DNS_Server()
+    except KeyboardInterrupt:
+        exit(3)
+

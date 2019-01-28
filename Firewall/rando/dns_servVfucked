@@ -1,0 +1,146 @@
+#!/usr/bin/python3
+
+import os
+from socket import *
+import struct
+import traceback
+
+
+
+
+class DNS_Server:
+    def __init__(self):
+        self.DNS_LandR()
+
+    def DNS_LandR(self):
+        laddr = '192.168.5.135'
+        lport = 53
+        
+        qaddr = '192.168.5.135'
+        qsport = 62156
+
+        # listen for UDP datagrams
+        sock = socket(AF_INET, SOCK_DGRAM)
+        sock.bind((laddr, lport))        
+        
+        sock2 = socket(AF_INET, SOCK_DGRAM)
+        sock2.bind((qaddr, qsport))
+        
+        
+
+        while True:
+            # receive and parse query
+            data, addr = sock.recvfrom(1024)
+            try:
+                self.parse_init_query(data)
+                self.create_dns_fields()
+                self.assemble_dns_fields()#transaction_id, queries = 
+            except:
+                traceback.print_exc()
+                continue
+            print(self.extquery)
+            
+            if (self.qtype == b'\x1c'):
+                pass
+            else:
+                sock2.sendto(self.extquery, ('208.67.222.222', 53))
+                data2, addr2 = sock2.recvfrom(1024)          
+            # print queried domain names
+            try:
+                self.parse_ext_response(data2)
+            except:
+                traceback.print_exc()
+                continue  
+            
+
+            # answer query
+            resp = build_response(transaction_id, queries)
+            sock.sendto(resp, addr)
+                
+
+    def parse_init_query(self, data):
+        header = data[:12]
+        payload = data[12:]
+
+        # parse DNS header
+        tmp = struct.unpack(">6H", header)
+        transaction_id = tmp[0]
+        flags = tmp[1]
+        num_queries = tmp[2]
+        num_answer = tmp[3]
+        num_authority = tmp[4]
+        num_additional = tmp[5]
+
+        # extract several flags
+        is_query = flags & 0x8000 == 0
+        opcode = flags & 0x7800 >> 11
+        is_truncated = flags & 0x0200 != 0
+
+        # verify query structure
+        assert num_queries > 0
+        assert num_answer == 0
+        assert num_authority == 0
+        assert is_query
+        assert opcode == 0
+        assert not is_truncated
+
+        # extract queries
+        j = payload.index(0) + 1 + 4
+        self.query = payload[:j]
+        self.qtype = payload[j-3:j-2]
+        print(self.query)
+#        return transaction_id, self.queries
+
+    def parse_ext_response(self, data2):
+        print(data2)
+    
+            # assembler header
+    def create_dns_fields(self):
+        self.id        = 3418
+        self.qr        = 0
+        self.opcode    = 0
+        self.aa        = 0
+        self.tc        = 0
+        self.rd        = 1
+        self.ra        = 1
+        self.z         = 0
+        self.ad        = 0
+        self.cd        = 0
+        self.rcode     = 0
+        self.qdcount   = 1
+        self.ancount   = 1
+        self.nscount   = 0
+        self.arcount   = 0
+        self.dnsL = len(self.query) + 12
+        
+        
+        
+    def assemble_dns_fields(self):
+        self.p1 = (self.qr << 7) | (self.opcode << 3) | (self.aa << 2) | (self.tc << 1) | (self.rd << 0)
+        self.p2 = (self.ra << 7) | (self.z << 6) | (self.ad << 5) | (self.cd << 4) | (self.rcode << 0)          
+        self.extquery = struct.pack('!H2B4H' ,
+        self.id,
+        self.p1,
+        self.p2,
+        self.qdcount,
+        self.ancount,
+        self.nscount,
+        self.arcount
+        )
+        self.extquery = self.extquery + self.query
+        
+    def parse_ext_query(self):
+        pass
+    
+
+class Main:
+    def __init__(self):
+        pass
+    
+
+if __name__ == "__main__":
+    try:
+        DNS_Server()
+    except KeyboardInterrupt:
+        pass
+
