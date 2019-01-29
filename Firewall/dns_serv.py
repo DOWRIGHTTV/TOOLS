@@ -14,13 +14,10 @@ class DNSServer:
         self.laddr = '192.168.83.3'
         self.qaddr = '192.168.2.78'
         self.lport = 53
-        
-        self.sock = socket(AF_INET, SOCK_DGRAM)
-        self.sock.bind((self.laddr, self.lport))
-
-        self.sock2 = socket(AF_INET, SOCK_DGRAM)
 
     def Start(self):
+        self.sock = socket(AF_INET, SOCK_DGRAM)
+        self.sock.bind((self.laddr, self.lport))
         # listen for UDP datagrams
         print('[+] Listening -> {}:{}'.format(self.laddr, self.lport)) 
         while True:
@@ -37,12 +34,15 @@ class DNSServer:
             except Exception as E:
                 pass   
     def RandR(self):
+        sock = socket(AF_INET, SOCK_DGRAM)
         time.sleep(.1)
-        self.sock2.sendto(self.data, ('208.67.222.222', 53))
-        print('Request Relayed')
-        self.data2, self.addr2 = self.sock2.recvfrom(1024)
-        print('Request recieved')
-        self.sock.sendto(self.data2, self.addr)
+        sock.sendto(self.data, ('208.67.222.222', 53))
+#        print('Request Relayed')
+        data, addr = sock.recvfrom(1024)
+#        print('Request Received')
+        self.sock.sendto(data, addr)
+        
+        
 #        print('--------------------------')
 #        print(self.data2)
 #        end = time.time()
