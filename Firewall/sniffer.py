@@ -27,16 +27,18 @@ class Packet:
         self.data = data
         self.addr = data
         
-
-        self.udp()
-        if (self.dport == 53):
-            self.dnsQuery()
-            self.dns()
-            if (self.qtype == 1):
-                self.ip()
-                self.ethernet()
-        else:
-            pass        
+        try:
+            self.udp()
+            if (self.dport == 53):
+                self.dnsQuery()
+                self.dns()
+                if (self.qtype == 1):
+                    self.ip()
+                    self.ethernet()
+            else:
+                pass
+        except Exception:
+            pass     
                 
     def ethernet(self):   
         s = []
@@ -77,7 +79,7 @@ class Packet:
         for byte in qn[1:]:
             b += 1
 
-        qname = struct.unpack('!{}B'.format(b), qn[0:b+1]) 
+        qname = struct.unpack('!{}B'.format(b), qn[0:b+1])
         dnsQ = struct.unpack('!2H', qt[0:4])
         self.qtype = dnsQ[0]
 

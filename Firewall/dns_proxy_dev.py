@@ -13,7 +13,7 @@ from config import HOMEDIR, INIFACE
 
 import argparse
 from sys import argv
-from multiprocessing import Process
+import multiprocessing
 
 
 class DNSProxy:
@@ -44,7 +44,6 @@ class DNSProxy:
                     else:
                         urlHex += '|{:02d}|{}'.format(len(part), part)               
                 self.urldict[line[0]] = [urlHex, cat, 0]
-        print(self.urldict)
 
     def Sniffer(self):
         
@@ -68,16 +67,18 @@ class DNSProxy:
                         subprocess.call(['sudo', 'iptables', '-I', 'BLACKLIST', '-m', 'string', '--hex-string', urL, '--algo', 'bm', '-j', 'DROP'])
 #                    end = time.time()
 #                    print(end - start)
-                    DNS = DNR.DNS_Response()
-                    multiprocessing.Process(target=DNR.Response, args=(self.iface, packet))
+                    DNS = DNR.DNS_Response(self.iface, packet)
+                    multiprocessing.Process(target=DNS.Response).start()
 #                    DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall'.format(reQ))
                 else:
                     self.urldict[reQ][2] += 1
-                    DNR.DNS_Response(self.iface, packet)
+                    DNS = DNR.DNS_Response(self.iface, packet)
+                    multiprocessing.Process(target=DNS.Response).start()
+#                    DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall. already blocked.'.format(reQ))
         except Exception as E:
-            pass      
+            pass     
         
 if __name__ == '__main__':
     DNSP = DNSProxy()

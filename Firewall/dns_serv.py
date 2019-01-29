@@ -5,10 +5,11 @@ from socket import *
 import struct
 import traceback
 import time
+import threading
 
 
 
-class DNS_Server:
+class DNSServer:
     def __init__(self):
         self.laddr = '192.168.83.3'
         self.qaddr = '192.168.2.78'
@@ -29,21 +30,24 @@ class DNS_Server:
             try:
                 self.parse_init_query(self.data)
                 if (self.qtype == b'\x01'):
-                    time.sleep(.1)
-                    self.sock2.sendto(self.data, ('208.67.222.222', 53))
-                    print('Request relayed')
-                    self.data2, self.addr2 = self.sock2.recvfrom(1024)
-                    print('Request recieved')
-                    self.sock.sendto(self.data2, self.addr)
-                    print('--------------------------')
-                    print(self.data2)
-                    end = time.time()
-                    print(end - start)
-                    print('--------------------------')
+                    print('Wait, then relay')
+                    threading.Thread(target=self.RandR).start()
                 else:
                     pass
             except Exception as E:
-                continue           
+                pass   
+    def RandR(self):
+        time.sleep(.1)
+        self.sock2.sendto(self.data, ('208.67.222.222', 53))
+        print('Request Relayed')
+        self.data2, self.addr2 = self.sock2.recvfrom(1024)
+        print('Request recieved')
+        self.sock.sendto(self.data2, self.addr)
+#        print('--------------------------')
+#        print(self.data2)
+#        end = time.time()
+#        print(end - start)
+#        print('--------------------------')       
 
     def parse_init_query(self, data):
         header = data[:12]
@@ -55,7 +59,8 @@ class DNS_Server:
 
 if __name__ == "__main__":
     try:
-        DNS_Server()
+        DNS = DNSServer()
+        DNS.Start()
     except KeyboardInterrupt:
         exit(3)
 

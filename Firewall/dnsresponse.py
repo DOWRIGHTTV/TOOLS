@@ -11,10 +11,10 @@ import array
 
 class DNS_Response:
     def __init__(self, iface, packet):
-        self.iF = iface
-        self.ip = IPPacket(packet)        
+        self.iniface = iface
+        self.ip = IPPacket(packet)
         self.s = socket(AF_PACKET, SOCK_RAW)
-        self.s.bind((self.iF, 0))        
+        self.s.bind((self.iniface, 0))
 
     def Response(self):
         self.ip.assemble_QueryR_fields()
@@ -23,7 +23,8 @@ class DNS_Response:
         self.ip.assemble_ipv4_fields()
         self.ip.assemble_eth_fields()
         complete =  self.ip.raw1 + self.ip.raw2 + self.ip.raw3  + self.ip.raw4 + self.ip.raw5
-        self.s.send(complete)  
+        self.s.send(complete)
+        print('Response Sent')
 
 class IPPacket:
     def __init__(self, packet):

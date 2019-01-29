@@ -3,7 +3,7 @@
 import os
 import subprocess
 import initialcfg as CFG
-import dnx_run Firewall
+import dnx_run as Firewall
 
 class Main_Start:
     def __init__(self):

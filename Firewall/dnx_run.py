@@ -8,10 +8,11 @@ import multiprocessing
 
 
   
-def Run(self):
-    DNSProxy = DNSProxyInit()
-    DNSServer = DNSServerInit()
+def Run():
+    DNSProxy = DNSProxyInit.DNSProxy()
+    DNSServer = DNSServerInit.DNSServer()
     
+    print('oh noes')
     multiprocessing.Process(target=DNSProxy.Start).start()
     multiprocessing.Process(target=DNSServer.Start).start()
 
