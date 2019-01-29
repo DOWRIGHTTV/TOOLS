@@ -10,9 +10,6 @@ import time
 
 class DNS_Server:
     def __init__(self):
-#        tmp = os.getenv("DNS_LISTEN", "192.168.5.135:53")
-#        self.laddr, _, lport = tmp.partition(":")
-#        self.lport = int(lport)
         self.laddr = '192.168.83.3'
         self.qaddr = '192.168.2.78'
         self.lport = 53
@@ -21,10 +18,8 @@ class DNS_Server:
         self.sock.bind((self.laddr, self.lport))
 
         self.sock2 = socket(AF_INET, SOCK_DGRAM)
-        self.DNS_LandR()                   
 
-    def DNS_LandR(self):
-
+    def Start(self):
         # listen for UDP datagrams
         print('[+] Listening -> {}:{}'.format(self.laddr, self.lport)) 
         while True:
@@ -35,7 +30,6 @@ class DNS_Server:
                 self.parse_init_query(self.data)
                 if (self.qtype == b'\x01'):
                     time.sleep(.1)
-#                    self.sock2.bind((self.qaddr, self.sport)) # THIS IS FUCKED - DONT NEED
                     self.sock2.sendto(self.data, ('208.67.222.222', 53))
                     print('Request relayed')
                     self.data2, self.addr2 = self.sock2.recvfrom(1024)

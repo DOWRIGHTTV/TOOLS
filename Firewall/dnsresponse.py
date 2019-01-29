@@ -15,9 +15,8 @@ class DNS_Response:
         self.ip = IPPacket(packet)        
         self.s = socket(AF_PACKET, SOCK_RAW)
         self.s.bind((self.iF, 0))        
-        self.response()
 
-    def response(self):
+    def Response(self):
         self.ip.assemble_QueryR_fields()
         self.ip.assemble_dns_fields()
         self.ip.assemble_udp()

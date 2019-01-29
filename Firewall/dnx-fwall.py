@@ -3,7 +3,7 @@
 import os
 import subprocess
 import initialcfg as CFG
-import dns_proxy_dev as DNSProxy
+import dnx_run Firewall
 
 class Main_Start:
     def __init__(self):
@@ -19,7 +19,7 @@ class Main_Start:
         if (int(self.answeR) == 1):
             CFG.Main()
         elif (int(self.answeR) == 2):
-            DNSProxy.Start()
+            Firewall.Run()
         elif (int(self.answeR) == 3):
             exit(3)
         elif (int(self.answeR) == 4):
