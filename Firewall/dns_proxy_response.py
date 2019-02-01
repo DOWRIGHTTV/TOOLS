@@ -1,18 +1,19 @@
 #!/usr/bin/python3
 
-from contextlib import closing
-from socket import *
 import sys
 import struct
 import time
 import binascii
 import subprocess
 import array
+from contextlib import closing
+from socket import *
 
-class DNS_Response:
+
+class DNSResponse:
     def __init__(self, iface, packet):
         self.iniface = iface
-        self.ip = IPPacket(packet)
+        self.ip = Packet(packet)
         self.s = socket(AF_PACKET, SOCK_RAW)
         self.s.bind((self.iniface, 0))
 
@@ -26,7 +27,7 @@ class DNS_Response:
         self.s.send(complete)
         print('Response Sent')
 
-class IPPacket:
+class Packet:
     def __init__(self, packet):
         self.packet = packet
         self.split_packet()

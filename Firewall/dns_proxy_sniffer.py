@@ -13,8 +13,6 @@ class Sniffer:
         self.s = socket(AF_PACKET, SOCK_RAW)
         self.s.bind((self.iface, 3))
         
-        self.sniffer()
-        
     def sniffer(self):
         print('Sniffing on: {}'.format(self.iface))
         while True:
@@ -25,7 +23,7 @@ class Sniffer:
 class Packet:
     def __init__(self, data, addr):
         self.data = data
-        self.addr = data
+        self.addr = addr
         
         try:
             self.udp()

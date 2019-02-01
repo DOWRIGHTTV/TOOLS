@@ -9,12 +9,14 @@ import subprocess
 from config import *
 
 
-class FW_Options:
+class FirewallOptions:
     def __init__(self):
         self.macreg = re.compile('(?:[0-9a-fA-F]:?){12}')
         self.validIP = re.compile('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
         self.line = '---------------------------'
         self.cfg = 'config.py'
+        
+    def Start(self):
         self.set_interface_names()
         self.set_lan_subnet()
         self.set_mode()
@@ -22,8 +24,7 @@ class FW_Options:
             self.set_macs()
         self.set_cats()
         self.ext_dns()
-        
-        self.apply_cfg()    
+        self.apply_cfg()
         
     def set_interface_names(self):
         self.waniface = input('What is your WAN interface name? ')
@@ -189,79 +190,6 @@ class FW_Options:
                         print(line.replace('MAC{}="{}"'.format(M, M), 'MAC{}="{}"'.format(M,mac)), end='')
                     M += 1
 
-class FW_IFaceCheck:
-    def __init__(self, FWO):
-        self.FWO = FWO    
-        self.wan_ip_check()
-    
-    def wan_ip_check(self):
-        i = 0
-        output = subprocess.check_output('ifconfig {}'.format(self.FWO.waniface), shell=True).decode()
-        output = output.splitlines(8)
-        for line in output:
-            if('inet' in line and i == 0):
-                i += 1
-                line = line.strip().split(' ')
-                self.wanip = line[1]
-                    
-class FW_IPTables:
-    def __init__(self, iF, FWO):
-        self.iF = iF
-        self.FWO = FWO
-        self.cChains = ['MALICIOUS', 'WHITELIST', 'BLACKLIST']
-        try:
-            self.create_new_chains()
-            self.main_forward_set()
-            self.main_input_set()
-            self.main_output_set()
-            self.NAT()
-        except Exception as E:
-            print(E)
-            
-    def create_new_chains(self):
-        for chain in self.cChains:
-            subprocess.call(['sudo', 'iptables', '-N', chain])
-            subprocess.call(['sudo', 'iptables', '-A', chain, '-j', 'RETURN'])
-        
-    def main_forward_set(self):
-        subprocess.call(['sudo', 'iptables', '-P', 'FORWARD', 'DROP'])
-        if (EXTERNALDNS == True):        
-            subprocess.call(['sudo', 'iptables', '-A', 'FORWARD', '-p', 'udp', '--dport', '53', '-j', 'REJECT'])
-            subprocess.call(['sudo', 'iptables', '-A', 'FORWARD', '-p', 'tcp', '--dport', '53', '-j', 'REJECT'])
-        elif (EXTERNALDNS == False): 
-            for chain in self.cChains:
-                subprocess.call(['sudo', 'iptables', '-A', 'FORWARD', '-p', 'udp', '--sport', '53', '-j', chain])
-            for chain in self.cChains:
-                subprocess.call(['sudo', 'iptables', '-A', 'FORWARD', '-p', 'udp', '--dport', '53', '-j', chain])
- 
-        subprocess.call(['sudo', 'iptables', '-A', 'FORWARD', '-i', INIFACE, '-j', 'ACCEPT'])
-        subprocess.call(['sudo', 'iptables', '-A', 'FORWARD', '-m', 'conntrack', '--ctstate', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
-        
-    def main_input_set(self):
-        subprocess.call(['sudo', 'iptables', '-P', 'INPUT', 'DROP'])
-        for chain in self.cChains:
-            subprocess.call(['sudo', 'iptables', '-A', 'INPUT', '-p', 'udp', '--dport', '53', '-j', chain])
-        subprocess.call(['sudo', 'iptables', '-A', 'INPUT', '-i', INIFACE, '-p', 'icmp', '--icmp-type', 'any', '-j', 'ACCEPT'])
-        subprocess.call(['sudo', 'iptables', '-A', 'INPUT', '-m', 'conntrack', '--ctstate', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
-
-        subprocess.call(['sudo', 'iptables', '-A', 'INPUT', '-i', INIFACE, '-p', 'udp', '--dport', '53', '-j', 'ACCEPT'])
-        subprocess.call(['sudo', 'iptables', '-A', 'INPUT', '-i', INIFACE, '-p', 'tcp', '--dport', '443', '-j', 'ACCEPT'])
-        
-    def main_output_set(self):
-        subprocess.call(['sudo', 'iptables', '-P', 'OUTPUT', 'DROP'])
-        subprocess.call(['sudo', 'iptables', '-A', 'OUTPUT', '-d', '{}'.format(LOCALNET), '-j', 'ACCEPT'])
-        subprocess.call(['sudo', 'iptables', '-A', 'OUTPUT', '-s', self.iF.wanip, '-j', 'MALICIOUS'])        
-        subprocess.call(['sudo', 'iptables', '-A', 'OUTPUT', '-s', self.iF.wanip, '-j', 'ACCEPT'])
-        #put entry for list location#
-        
-    def NAT(self):
-        subprocess.call(['sudo', 'iptables', '-t', 'nat', '-A', 'POSTROUTING', '-o', WANIFACE, '-j', 'MASQUERADE'])
-
-class Main:
-    def __init__(sef):
-        FWO = FW_Options()
-        iF = FW_IFaceCheck(FWO)
-        FW_IPTables(iF, FWO)
-
 if __name__ == '__main__':
-    FWConfigure()    
+    FWC = FWConfigure()
+    FWC.Start()

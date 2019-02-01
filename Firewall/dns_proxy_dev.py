@@ -5,15 +5,16 @@
 #from socket import AF_INET, SOCK_DGRAM, socket
 
 import subprocess
-import sniffer as sniff
-import dnsresponse as DNR
 import os
 import time
-from config import HOMEDIR, INIFACE
-
 import argparse
-from sys import argv
 import multiprocessing
+
+from dns_proxy_response import DNSResponse
+from config import HOMEDIR, INIFACE
+from dns_proxy_sniffer import Sniffer
+from sys import argv
+
 
 
 class DNSProxy:
@@ -47,7 +48,7 @@ class DNSProxy:
 
     def Sniffer(self):
         
-        self.sn = sniff.Sniffer(self.iface, AK=self.url_check)
+        self.sn = sniffer(self.iface, AK=self.url_check)
        
     def url_check(self, packet):
         p = packet
@@ -67,13 +68,13 @@ class DNSProxy:
                         subprocess.call(['sudo', 'iptables', '-I', 'BLACKLIST', '-m', 'string', '--hex-string', urL, '--algo', 'bm', '-j', 'DROP'])
 #                    end = time.time()
 #                    print(end - start)
-                    DNS = DNR.DNS_Response(self.iface, packet)
+                    DNS = DNSResponse(self.iface, packet)
                     multiprocessing.Process(target=DNS.Response).start()
 #                    DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall'.format(reQ))
                 else:
                     self.urldict[reQ][2] += 1
-                    DNS = DNR.DNS_Response(self.iface, packet)
+                    DNS = DNSResponse(self.iface, packet)
                     multiprocessing.Process(target=DNS.Response).start()
 #                    DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall. already blocked.'.format(reQ))

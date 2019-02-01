@@ -2,13 +2,16 @@
 ## FIREWALL CONFIG FILE
 
 # Home Directory
-HOMEDIR="/home/free/Desktop/Firewall"
+HOMEDIR="/home/free/Desktop/TOOLS/Firewall"
 
 #Outside Interface
-WANIFACE="enp0s3"
+WANIFACE="eth0"
 
 #Inside Interface
-INIFACE="enp0s8"
+INIFACE="eth0"
+
+#Inside IP Address
+INIPADDR=''
 
 #Local network
 LOCALNET="192.168.83.0/24"
@@ -18,14 +21,14 @@ EXTERNALDNS=True
 
 #URL CATEGORIES
 MALICIOUS=1
-VPN=1
-ADULT=1
-DRUGS=1
+VPN=0
+ADULT=0
+DRUGS=0
 GUNS=0
 DYNDNS=0
-ADS=1
+ADS=0
 SOCIALMEDIA=0
-
+TEST=1
 # WHITE LISTED MACS
 
 MAC1="1"

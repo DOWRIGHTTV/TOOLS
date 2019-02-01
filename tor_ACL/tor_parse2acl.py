@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 ## ------------------------------------------- ##
-## TOR NODE EXIT LIST FOUND AT				 ##
+## TOR NODE EXIT LIST FOUND AT				   ##
 ## https://check.torproject.org/exit-addresses ##
 ## ------------------------------------------- ##
 

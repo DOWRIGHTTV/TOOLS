@@ -2,7 +2,8 @@
 
 import os
 import subprocess
-import initialcfg as CFG
+from initialcfg import *
+from iptables import *
 import dnx_run as Firewall
 
 class Main_Start:
@@ -12,12 +13,14 @@ class Main_Start:
         print('[2] Run Firewall')
         print('[3] Edit Firewall Options')
         print('[4] NGFW-X Setting ;)')
-        self.Main()
         
     def Main(self):
         self.answeR = input('Select option: ')
         if (int(self.answeR) == 1):
-            CFG.Main()
+            CFG = FirewallOptions()
+            IPT = IPTables()
+            CFG.Start()
+            IPT.Start()
         elif (int(self.answeR) == 2):
             Firewall.Run()
         elif (int(self.answeR) == 3):
@@ -39,7 +42,8 @@ if __name__ == '__main__':
             print('| |_|   ||  _    | |     |   |    ___||       ||       ||   |___ |   |___ ')
             print('|       || | |   ||   _   |  |   |    |   _   ||   _   ||       ||       |')
             print('|______| |_|  |__||__| |__|  |___|    |__| |__||__| |__||_______||_______|')
-            Main_Start()
+            MS = Main_Start()
+            MS.Main()
         else:
             print('DNX FWALL requires Root Priveledges. Exiting...')
             exit(1)
