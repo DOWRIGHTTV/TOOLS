@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 
-catlist = ['Malicious', 'VPN', 'Adult', 'Drugs', 'Guns', 'DynDNS', 'Ads', 'SocialMedia', 'Test']
+from config import HOMEDIR
+
+catlist = ['Malicious', 'VPN', 'Adult', 'Drugs', 'Guns', 'DynDNS', 'Ads', 'SocialMedia']
 
 combinefiles = []
-
-path = '/home/free/Desktop/TOOLS/Firewall/domainlists'
-
 
 def Combine():
     for cat in catlist:
@@ -14,10 +13,9 @@ def Combine():
                 if ('{}=1'.format(cat.upper()) in line):
                     combinefiles.append('{}.domains'.format(cat))
 
-
     with open('{}/BL.domains'.format(path), 'w+') as BL:
         for files in combinefiles:
-            with open('{}/{}'.format(path, files), 'r+') as files:          
+            with open('{}/{}'.format(HOMEDIR, files), 'r+') as files:
                 for line in files:
                     BL.write(line)
 
