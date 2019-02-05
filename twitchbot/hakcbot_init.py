@@ -17,6 +17,7 @@ class Hakcbot:
         self.s.send('PASS {}\r\n'.format(PASS).encode("utf-8"))
         self.s.send('NICK {}\r\n'.format(IDENT).encode("utf-8"))
         self.s.send('JOIN #{}\r\n'.format(CHANNEL).encode("utf-8"))
+        self.s.send('CAP REQ :twitch.tv/tags\r\n'.encode("utf-8"))
         
     def joinRoom(self):
         rb = ''

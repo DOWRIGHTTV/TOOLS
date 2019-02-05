@@ -22,8 +22,6 @@ class Run:
         self.linecount = 0
         
     def Processes(self):
-#        multiprocessing.Process(target=self.Hakc).start()
-#        multiprocessing.Process(target=self.Hakc2).start()
         
         threading.Thread(target=self.Hakc).start()
         threading.Thread(target=self.Hakc2).start()
@@ -40,6 +38,7 @@ class Run:
                     if ('PING :tmi.twitch.tv\r' == line):
                         print(line)
                         self.linecount = 0
+                        self.Automate.linecount = self.linecount
                         self.Hakcbot.s.send('PONG :tmi.twitch.tv\r\n'.encode("utf-8"))
                     elif ('JOIN' in line):
                         pass
@@ -50,15 +49,13 @@ class Run:
                             self.linecount += 1
                             self.Automate.linecount = self.linecount
                         else:
-                            pass
-                            
+                            pass 
         except Exception as E:
             print('Main Process Error: {}'.format(E))
-
     
     def Hakc2(self):
         key = ['Sub', 'Commands', 'Discord', 'Github']
-        value = [60, 50, 45, 30]
+        value = [99, 87, 59, 47]
         
         try:
             loop = asyncio.new_event_loop()
@@ -82,6 +79,7 @@ class Automate:
         try:
             while True:
                 await asyncio.sleep(60 * value)
+                print(self.linecount)
                 if (self.linecount >= 3):
                     eval('self.Execute.{}()'.format(key))
                 else:
@@ -95,8 +93,12 @@ class Main:
         Hakcbot.Connect()
         HakcbotRun = Run(Hakcbot)
         HakcbotRun.Processes()
-     
-Main()
+
+if __name__ == '__main__':
+    try:  
+        Main()
+    except KeyboardInterrupt:
+        print('Exiting Hakcbot :(')
 
 
 

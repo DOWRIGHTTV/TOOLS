@@ -5,6 +5,7 @@ import re
 import threading
 from config import *
 import time
+import requests
 
 uList = []
 
@@ -16,13 +17,18 @@ class Execute:
         self.regflag = r'flag\((.*?)\)'
         self.regunflag = r'flag\((.*?)\)'
         
+        self.msgreg = re.compile(r'user-type=(.*)')
+        
         self.hakcinfo = True
         self.hakccommands = True
         self.hakcyoutube = True
         self.hakcdiscord = True
         self.hakcgithub = True
         self.hakcsub = True
+        self.hakcuptime = True
         self.hakctime = True
+        self.hakcplaylist = True
+        self.hakcparrot = True        
         self.hakcyourmom = True
         self.hakcyourmum = True
                 
@@ -43,14 +49,20 @@ class Execute:
             elif ('youtube()' in self.msg and self.hakcyoutube == True):
                 command, CD = self.Youtube()
             elif ('discord()' in self.msg and self.hakcdiscord == True):
-                command, CD = self.Discord() 
+                command, CD = self.Discord()
             elif ('github()' in self.msg and self.hakcgithub == True):
                command, CD =  self.Github()
             elif ('sub()' in self.msg and self.hakcgithub == True):
-               command, CD =  self.Sub()            
+               command, CD =  self.Sub()
+            elif ('uptime()' in self.msg and self.hakcuptime == True):
+               command, CD =  threading.Thread(target=self.UpTime).start()
             elif ('time()' in self.msg and self.hakctime == True):
                command, CD =  self.Time()
-            
+            elif ('playlist()' in self.msg and self.hakcplaylist == True):
+               command, CD =  self.Playlist()
+            elif ('parrot()' in self.msg and self.hakcparrot == True):
+               command, CD =  self.Parrot()
+                           
             if (command):
                 threading.Thread(target=self.Cooldown, args=(command, CD)).start()
             else:
@@ -94,6 +106,14 @@ class Execute:
         self.sendMessage(message)
         print('hakcbot: {}'.format(message))
         return('hakcsub', 180)        
+
+    def UpTime(self):
+        uptime = requests.get("https://decapi.me/twitch/uptime?channel=dowright")
+        uptime = uptime.text.strip('\n')
+        message = "DOWRIGHT has been live for {}".format(uptime)
+        self.sendMessage(message)
+        print('hakcbot: {}'.format(message))
+        return('hakcuptime', 300)
                             
     def Time(self):
         current_time = time.localtime()
@@ -102,7 +122,21 @@ class Execute:
         self.sendMessage(message)
         print('hakcbot: {}'.format(message))
         return('hakctime', 300)
+        
+    def Playlist(self):
+        message = "Main Playlist -> https://www.youtube.com/watch?v=4ZxhlnHl9rE&list=PLDfKAXSi6kUbh7mE6gnPrkBM_yVJFqX-U"
+        self.sendMessage(message)
+        print('hakcbot: {}'.format(message))
+        return('hakcplaylist', 180)
 
+    def Parrot(self):
+        message = "I prefer Parrot OS because it comes with all Airgeddon options, \
+        its preloaded with OpenVAS setup scripts(Vulv Scan), and the general user \
+        experience is great. https://www.parrotsec.org/"
+        self.sendMessage(message)
+        print('hakcbot: {}'.format(message))
+        return('hakcparrot', 180)  
+        
     def Comms(self):
 #        if(self.user in modList):
         if (self.user == 'dowright'):
@@ -156,10 +190,11 @@ class Execute:
         
     def format_line(self):
         try:
-            line = self.line.split(':', 2)
-            user = line[1].split('!')
+            msg = re.findall(self.msgreg, self.line)[0]
+            msg = msg.split(':', 2)
+            user = msg[1].split('!')
             self.user = user[0]
-            self.msg = line[2]
+            self.msg = msg[2]
             print('{}: {}'.format(self.user, self.msg))
         except Exception:
             raise Exception('Format Line Error')
