@@ -2,7 +2,7 @@
 
 from config import HOMEDIR
 
-catlist = ['Malicious', 'VPN', 'Adult', 'Drugs', 'Guns', 'DynDNS', 'Ads', 'SocialMedia']
+catlist = ['Malicious', 'VPN', 'Adult', 'Drugs', 'Guns', 'DynDNS', 'Ads', 'SocialMedia', 'TeenTop50']
 
 combinefiles = []
 
@@ -13,11 +13,13 @@ def Combine():
                 if ('{}=1'.format(cat.upper()) in line):
                     combinefiles.append('{}.domains'.format(cat))
 
-    with open('{}/BL.domains'.format(path), 'w+') as BL:
+    with open('{}/domainlists/Blocked.domains'.format(HOMEDIR), 'w+') as Blocked:
         for files in combinefiles:
-            with open('{}/{}'.format(HOMEDIR, files), 'r+') as files:
+            with open('{}/domainlists/{}'.format(HOMEDIR, files), 'r+') as files:
                 for line in files:
-                    BL.write(line)
+                    Blocked.write(line)
 
 
-                 
+
+if __name__ == '__main__':
+    Combine()                

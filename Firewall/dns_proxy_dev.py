@@ -10,27 +10,28 @@ import time
 import argparse
 import multiprocessing
 
+from interface_ip import *
+from subprocess import run
 from dns_proxy_response import DNSResponse
 from config import HOMEDIR, INIFACE
 from dns_proxy_sniffer import Sniffer
 from sys import argv
 
-
-
 class DNSProxy:
     def __init__(self):
+        Int = Interface()
+        self.insideip = Int.InsideIP()
         self.homedir = HOMEDIR
         self.iface = INIFACE
         self.DEVNULL = open(os.devnull, 'wb')
-        self.urldict = {}
-        
+        self.urldict = {}        
         
     def Start(self):
         self.Dictload()
-        self.Sniffer()
+        self.Proxy()
     
     def Dictload(self):
-        with open('{}/domainlists/Malicious.domains'.format(self.homedir), 'r') as BL:
+        with open('{}/domainlists/Blocked.domains'.format(self.homedir), 'r') as BL:
             while True:
                 urlHex = ''
                 line = BL.readline().strip().lower()
@@ -46,9 +47,10 @@ class DNSProxy:
                         urlHex += '|{:02d}|{}'.format(len(part), part)               
                 self.urldict[line[0]] = [urlHex, cat, 0]
 
-    def Sniffer(self):
-        
-        self.sn = sniffer(self.iface, AK=self.url_check)
+    def Proxy(self):
+    
+        Proxy = Sniffer(self.iface, action=self.url_check)
+        Proxy.Start()            
        
     def url_check(self, packet):
         p = packet
@@ -62,10 +64,10 @@ class DNSProxy:
                 if (self.urldict[reQ][2] == 0):
                     if (self.urldict[reQ][1] == 'malicious'):
                         self.urldict[reQ][2] += 1
-                        subprocess.call(['sudo', 'iptables', '-I', 'MALICIOUS', '-m', 'string', '--hex-string', urL, '--algo', 'bm', '-j', 'DROP'])
+                        run('iptables -I MALICIOUS -m string --hex-string "{}" --algo bm -j DROP'.format(urL), shell=True)
                     else:
                         self.urldict[reQ][2] += 1
-                        subprocess.call(['sudo', 'iptables', '-I', 'BLACKLIST', '-m', 'string', '--hex-string', urL, '--algo', 'bm', '-j', 'DROP'])
+                        run('iptables -I BLACKLIST -m string --hex-string "{}" --algo bm -j DROP'.format(urL), shell=True)
 #                    end = time.time()
 #                    print(end - start)
                     DNS = DNSResponse(self.iface, packet)
@@ -74,7 +76,7 @@ class DNSProxy:
                     print('Pointing {} to Firewall'.format(reQ))
                 else:
                     self.urldict[reQ][2] += 1
-                    DNS = DNSResponse(self.iface, packet)
+                    DNS = DNSResponse(self.iface, self.insideip, packet)
                     multiprocessing.Process(target=DNS.Response).start()
 #                    DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall. already blocked.'.format(reQ))

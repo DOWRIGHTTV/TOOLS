@@ -11,11 +11,14 @@ from socket import *
 
 
 class DNSResponse:
-    def __init__(self, iface, packet):
+    def __init__(self, iface, insideip, packet):
         self.iniface = iface
-        self.ip = Packet(packet)
+        
         self.s = socket(AF_PACKET, SOCK_RAW)
         self.s.bind((self.iniface, 0))
+        
+        self.ip = Packet(insideip, packet)
+        self.ip.Start(packet)
 
     def Response(self):
         self.ip.assemble_QueryR_fields()
@@ -25,11 +28,14 @@ class DNSResponse:
         self.ip.assemble_eth_fields()
         complete =  self.ip.raw1 + self.ip.raw2 + self.ip.raw3  + self.ip.raw4 + self.ip.raw5
         self.s.send(complete)
-        print('Response Sent')
+#        print('Response Sent')
 
 class Packet:
-    def __init__(self, packet):
+    def __init__(self, insideip, packet):
+        self.insideip = insideip
         self.packet = packet
+    
+    def Start(self):
         self.split_packet()
         self.create_QueryR_fields()
         self.create_dns_fields()
@@ -175,7 +181,7 @@ class Packet:
         self.rclass    = 1
         self.ttl       = 3600
         self.rdlen     = 4
-        self.rdata     = inet_aton('192.168.83.3')
+        self.rdata     = inet_aton(self.insideip)
         self.urlTTL = len(self.url) + len(self.url)
         self.dnsRL = self.urlTTL  + 14 + 2
         

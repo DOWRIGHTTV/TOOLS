@@ -4,11 +4,10 @@ import os
 import subprocess
 from initialcfg import *
 from iptables import *
-import dnx_run as Firewall
 
 class Main_Start:
     def __init__(self):
-        print('Python Firewall')
+        print("Dad's Next Gen Firewall. The First Python Firewall ;)")
         print('[1] Initial Setup')
         print('[2] Run Firewall')
         print('[3] Edit Firewall Options')
@@ -22,6 +21,7 @@ class Main_Start:
             CFG.Start()
             IPT.Start()
         elif (int(self.answeR) == 2):
+            import dnx_run as Firewall
             Firewall.Run()
         elif (int(self.answeR) == 3):
             exit(3)

@@ -44,22 +44,24 @@ class DNSRelay:
         try:        
             self.sock = socket(AF_INET, SOCK_DGRAM)
             self.sock.bind((self.laddr, self.lport))
+            self.sock.setblocking(0)
             # listen for UDP datagrams
             print('[+] Listening -> {}:{}'.format(self.laddr, self.lport))
             while True:
                 self.data, self.addr = self.sock.recvfrom(1024)
                 start = time.time()
-                try:
-                    self.parse_init_query(self.data)
-                    
-                    if (self.qtype == b'\x01'):
-                        Relay = threading.Thread(target=self.RelayThread)
-                        Relay.daemon = True
-                        Relay.start()
-                    else:
-                        pass
-                except Exception as E:
-                    print(E)                    
+                if self.data:
+                    try:
+                        self.parse_init_query(self.data)
+                        
+                        if (self.qtype == b'\x01'):
+                            Relay = threading.Thread(target=self.RelayThread)
+                            Relay.daemon = True
+                            Relay.start()
+                        else:
+                            pass
+                    except Exception as E:
+                        print(E)                    
         except Exception as E:
             print(E)
             
@@ -69,9 +71,9 @@ class DNSRelay:
         for server in self.opendnsList:
             if (server[1] == True):
                 sock.sendto(self.data, (server[0], 53))
-                print('Request Relayed')
+#                print('Request Relayed')
                 data, addr = sock.recvfrom(1024)
-                print('Request Received')
+#                print('Request Received')
                 break
             else:
                 pass

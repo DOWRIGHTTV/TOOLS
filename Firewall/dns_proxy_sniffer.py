@@ -7,18 +7,18 @@ import binascii
 import codecs
 
 class Sniffer:
-    def __init__(self, iface, AK):
-        self.AK = AK
+    def __init__(self, iface, action):
+        self.action = action
         self.iface = iface
         self.s = socket(AF_PACKET, SOCK_RAW)
         self.s.bind((self.iface, 3))
         
-    def sniffer(self):
+    def Start(self):
         print('Sniffing on: {}'.format(self.iface))
         while True:
             self.data, self.addr = self.s.recvfrom(1024)
             packet = Packet(self.data, self.addr)
-            self.AK(packet)
+            self.action(packet)
                                         
 class Packet:
     def __init__(self, data, addr):
