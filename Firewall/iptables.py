@@ -8,8 +8,8 @@ from config import *
 class IPTables:
     def __init__(self):
         Int = Interface()
-        self.insideip = Int.InsideIP()
-        self.wanip = Int.WanIP()
+        self.insideip = Int.IP(INIFACE)
+        self.wanip = Int.IP(WANIFACE)
         self.cChains = ['MALICIOUS', 'WHITELIST', 'BLACKLIST']
         
     def Start(self):

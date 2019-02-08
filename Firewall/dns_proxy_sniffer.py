@@ -17,14 +17,16 @@ class Sniffer:
         print('Sniffing on: {}'.format(self.iface))
         while True:
             self.data, self.addr = self.s.recvfrom(1024)
-            packet = Packet(self.data, self.addr)
+            Parse = Packet(self.data, self.addr)
+            packet = Parse.Start()
             self.action(packet)
                                         
-class Packet:
+class PacketParse:
     def __init__(self, data, addr):
         self.data = data
         self.addr = addr
         
+    def Start(self):        
         try:
             self.udp()
             if (self.dport == 53):

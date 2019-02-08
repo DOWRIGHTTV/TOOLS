@@ -131,7 +131,7 @@ class Execute:
 
     def Parrot(self):
         message = "I prefer Parrot OS because it comes with all Airgeddon options, \
-        its preloaded with OpenVAS setup scripts(Vulv Scan), and the general user \
+        its preloaded with OpenVAS setup scripts(Vuln Scan), and the general user \
         experience is great. https://www.parrotsec.org/"
         self.sendMessage(message)
         print('hakcbot: {}'.format(message))

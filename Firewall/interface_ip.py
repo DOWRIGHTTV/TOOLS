@@ -1,38 +1,34 @@
 #!/usr/bin/python3
 
 import subprocess
-from config import WANIFACE, INIFACE
 
 
 
 class Interface:
-    def __init__(self): 
-        self.wan = WANIFACE
-        self.inside = INIFACE
-    
-    def WanIP(self):
+    def IP(self, interface):
         i = 0
-        output = subprocess.check_output('ifconfig {}'.format(self.wan), shell=True).decode()
+        output = subprocess.check_output('ifconfig {}'.format(interface), shell=True).decode()
         output = output.splitlines(8)
         for line in output:
             if('inet' in line and i == 0):
                 i += 1
                 line = line.strip().split(' ')
-                self.wanip = line[1]
-#                print(self.wanip)                
-                return(self.wanip)
-                
-    def InsideIP(self):
+                ip = line[1]
+#                print(ip)
+                return(ip)
+
+    def MTU(self, interface):
         i = 0
-        output = subprocess.check_output('ifconfig {}'.format(self.inside), shell=True).decode()
+        output = subprocess.check_output('ifconfig {}'.format(interface), shell=True).decode()
         output = output.splitlines(8)
         for line in output:
-            if('inet' in line and i == 0):
+            if(i == 0):
                 i += 1
                 line = line.strip().split(' ')
-                self.insideip = line[1]
-#                print(self.insideip)
-                return(self.insideip)
+                mtu = line[4]
+#                print(mtu)
+                return(mtu)
+
                 
 if __name__ == '__main__':
     Int = Interface()

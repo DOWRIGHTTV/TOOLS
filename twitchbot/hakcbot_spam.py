@@ -12,7 +12,7 @@ class Spam:
         self.permitlist = []
         
         self.regulars = ['bitnomadlive']
-        self.whitelist = ['pastebin.com', 'twitch.tv'] # PEP 8 IS BULLSHIT......FAIL
+        self.whitelist = {'pastebin.com', 'twitch.tv', 'github.com'} # PEP 8 IS BULLSHIT......FAIL
         
         self.permituser = re.compile(r'permit\((.*?)\)')
         self.urlregex = re.compile(
@@ -35,6 +35,7 @@ class Spam:
             print(E)                
       
     def urlFilter(self):
+        urlcheck = {}
 #        print(self.msg)
         urlmatch = re.findall(self.urlregex, self.msg)
         if urlmatch:
@@ -42,16 +43,16 @@ class Spam:
             if (self.user in self.regulars or self.subscriber == 'subscriber=1' \
             or self.user in self.permitlist):
                 pass
-            else:
+            else:            
                 for url in self.whitelist:
                     if url in self.msg:
-                        pass                    
-                    else:
-                        print('BLOCKED || {} : {}'.format(self.user, urlmatch[0]))
-                        message = '/timeout {} {} {}'.format(self.user, 10, urlmatch[0])
-                        response = '{}, ask for permission to post links.'.format(self.user)
-                        self.sendMessage(message, response)
-                        return True
+                        urlcheck.add(True)
+                if (True not in urlcheck):
+                    print('BLOCKED || {} : {}'.format(self.user, urlmatch[0]))
+                    message = '/timeout {} {} {}'.format(self.user, 10, urlmatch[0])
+                    response = '{}, ask for permission to post links.'.format(self.user)
+                    self.sendMessage(message, response)
+                    return True
 
     def HakcbotPermit(self):
 #        if(self.user in modList):

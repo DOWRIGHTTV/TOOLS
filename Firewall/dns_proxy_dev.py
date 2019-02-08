@@ -20,11 +20,11 @@ from sys import argv
 class DNSProxy:
     def __init__(self):
         Int = Interface()
-        self.insideip = Int.InsideIP()
+        self.insideip = Int.IP(INIFACE)
         self.homedir = HOMEDIR
         self.iface = INIFACE
         self.DEVNULL = open(os.devnull, 'wb')
-        self.urldict = {}        
+        self.urldict = {}
         
     def Start(self):
         self.Dictload()

@@ -13,8 +13,8 @@ from interface_ip import *
 class DNSRelay:
     def __init__(self):
         Int = Interface()
-        self.laddr = Int.InsideIP()
-        self.qaddr = Int.WanIP()
+        self.laddr = Int.IP(INIFACE)
+        self.qaddr = Int.IP(WANIFACE)
         self.opendns1 = ['208.67.222.222', True]
         self.opendns2 = ['208.67.222.220', True]
         self.opendnsList = [self.opendns1, self.opendns2]

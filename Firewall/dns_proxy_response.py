@@ -18,7 +18,7 @@ class DNSResponse:
         self.s.bind((self.iniface, 0))
         
         self.ip = Packet(insideip, packet)
-        self.ip.Start(packet)
+        self.ip.Start()
 
     def Response(self):
         self.ip.assemble_QueryR_fields()
