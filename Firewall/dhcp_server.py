@@ -117,7 +117,28 @@ class DHCPLeases:
     def __init__(self):
         self.leasetable = {}
         bob = LOCALNET.split(.)
-        self.iprange = '{}.{}.{}'.format(bob[0], bob[1], bob[2])        
+        self.iprange = '{}.{}.{}'.format(bob[0], bob[1], bob[2])
+
+    #--Persistent lease operations--#     
+    def WritetoFile(self):
+    #MAKE THIS RUN EVERY HOUR#
+        with open('DNX.leases', 'w+') as leases:
+            for ip, value in self.leasetable.items():
+                if (value is not None):
+                    leases.write('{} {}'.format(ip, value)
+                    
+    def BuildRangeNEW(self):
+        with open('DNX.leases', 'w+') as leases:
+            while True:
+                urlHex = ''
+                line = leases.readline().strip().lower()
+                if (not line):
+                    break
+                line = line.split(' ')
+                ip = line[0]
+                timestamp = line[1]           
+                self.leases[line[0]] = timestamp
+    #--End of Persistent lease operations--#
         
     def BuildRange(self): 
         timestamp = time.time()                
@@ -150,7 +171,7 @@ class DHCPLeases:
     
     def Handout(self):               
         for ip, value in self.leasetable.items():
-            if value = None
+            if (value is None):
                 timestamp = time.time()
                 self.leasetable[ip] = timestamp
                 return ip
