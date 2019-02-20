@@ -29,6 +29,17 @@ class Interface:
 #                print(mtu)
                 return(mtu)
 
+    def Netmask(self, interface):
+        i = 0
+        output = subprocess.check_output('ifconfig {}'.format(interface), shell=True).decode()
+        output = output.splitlines(8)
+        for line in output:
+            if('netmask' in line):
+                i += 1
+                line = line.strip().split(' ')
+                netmask = line[4]
+#                print(netmask)
+                return(netmask)
                 
 if __name__ == '__main__':
     Int = Interface()

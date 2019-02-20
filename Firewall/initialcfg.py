@@ -77,7 +77,7 @@ class FirewallOptions:
             self.set_mode()
         
     def set_macs(self):
-        self.macL = []
+        self.macL = set([])
         print(self.line)
         print('Enter MAC address of allowed computers.')
         print('Format > (aa:aa:aa:aa:aa:aa) - Type done to continue.')
@@ -98,7 +98,7 @@ class FirewallOptions:
                     print('Invalid entry. Try again.')
                     self.set_macs()
             elif self.macreg.match(macadd):
-                self.macL.append(macadd)
+                self.macL.add(macadd)
             else:
                 print('Please enter valid mac address')
     
@@ -182,13 +182,17 @@ class FirewallOptions:
             pass 
             ## -------- MAC WHITELIST -------- ##
         if (int(self.mode) == 1):
-            M = 1
-            for mac in self.macL:
-                print('MAC{}={}'.format(M, M) + ' MAC{}={}'.format(M,mac))                
-                with fileinput.FileInput(self.cfg, inplace=True) as file:
-                    for line in file:
-                        print(line.replace('MAC{}="{}"'.format(M, M), 'MAC{}="{}"'.format(M,mac)), end='')
-                    M += 1
+            with fileinput.FileInput(self.cfg, inplace=True) as file:
+                for line in file:
+                    print(line.replace('MACS={}', 'MACS={}'.format(self.macL)), end='')
+                    
+#            M = 1
+#            for mac in self.macL:
+#                print('MAC{}={}'.format(M, M) + ' MAC{}={}'.format(M,mac))                
+#                with fileinput.FileInput(self.cfg, inplace=True) as file:
+#                    for line in file:
+#                        print(line.replace('MAC{}="{}"'.format(M, M), 'MAC{}="{}"'.format(M,mac)), end='')
+#                    M += 1
 
 if __name__ == '__main__':
     FWC = FWConfigure()

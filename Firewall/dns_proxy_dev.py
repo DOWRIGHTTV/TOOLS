@@ -10,7 +10,7 @@ import time
 import argparse
 import multiprocessing
 
-from interface_ip import *
+from interface_info import *
 from subprocess import run
 from dns_proxy_response import DNSResponse
 from config import HOMEDIR, INIFACE

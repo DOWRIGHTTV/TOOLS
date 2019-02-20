@@ -14,7 +14,7 @@ INIFACE="eth0"
 INIPADDR=''
 
 #Local network
-LOCALNET="192.168.83.0/24"
+LOCALNET="192.168.5.0/24"
 
 #Block External DNS Queries
 EXTERNALDNS=True
@@ -31,12 +31,4 @@ SOCIALMEDIA=0
 TEENTOP50=1
 
 # WHITE LISTED MACS
-MAC1="1"
-MAC2="2"
-MAC3="3"
-MAC4="4"
-MAC5="5"
-MAC6="6"
-MAC7="7"
-MAC8="8"
-MAC9="9"
+MACS={'aa:aa:aa:aa:aa:aa', 'bb:bb:bb:bb:bb:bb', 'd0:77:14:99:ac:f3'}
