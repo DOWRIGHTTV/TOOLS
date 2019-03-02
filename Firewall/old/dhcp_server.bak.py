@@ -1,107 +1,134 @@
 #!/usr/bin/python3
 
-import socket
+import os, time, subprocess
+import threading, asyncio
+import struct
 
-MAX_BYTES = 1024
+from socket import *
+from config import INIFACE, LOCALNET
+from interface_ip import Interface
+from dhcp_leases import DHCPLeases
+from dhcp_response import DHCPResponse
 
-serverPort = 67
-clientPort = 68
+class DHCPServer:
+    def __init__(self):
+        Int = Interface()
+        self.insideip = Int.IP(INIFACE)
+        
+        self.Leases = DHCPLeases()
 
-class DHCP_server(object):
-
-    def server(self):
+    def Start(self):
         print("DHCP server is starting...\n")
         
-        s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
-        s.bind(('', serverPort))
-        dest = ('255.255.255.255', clientPort)
-
+        #--Creating Lease Dictionary--#
+        self.Leases.BuildRange()
+        self.Leases.ReadLeases()
+        
+        #Loading Lease Expiration Timer--##
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(asyncio.gather(
+            self.Leases.Timer, self.Leases.WritetoFile )
+            
+        except Exception as E:
+            print('AsyncIO General Error')
+            
+#        threading.Thread(target=self.Leases.Timer).start()
+#        threading.Thread(target=self.Leases.WritetoFile).start()
+        
+        #--Creating Sockets--##
+        
+        self.s = socket(AF_INET, SOCK_DGRAM)
+        self.s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
+        self.s.setsockopt(SOL_SOCKET, SO_BROADCAST,1)
+        self.s.bind(('0.0.0.0', 67))
+        print("[+] Listening on Port 67")
         while True:
             try:
-                print("Wait DHCP discovery.")
-                data, address = s.recvfrom(MAX_BYTES)
-                print("Receive DHCP discovery.")
-                #print(data)
+                self.rdata, self.addr = self.s.recvfrom(1024)
+                print(self.addr)
+                addr, port = self.addr
+                print('Received {}:{}'.format(addr, port))
+#                print(self.rdata)
+                mtype, xID, mac, ciaddr, chaddr, options = self.Parse(self.rdata) #, requestedip
+                if mtype == 1: #b'\x01':
+                    threading.Thread(target=self.Response, args=(2, xID, mac, ciaddr, chaddr, options,)).start()
+                elif mtype == 3: #b'\x03':
+                    threading.Thread(target=self.Response, args=(5, xID, mac, ciaddr, chaddr, options,)).start()
+                elif mtype == 7: #b'\x07':
+                    threading.Thread(target=self.Leases.Release, args=(ciaddr,)).start()
+                
+            except Exception as LOL:
+                print(LOL)
+                
+    def Response(self, mtype, xID, mac, ciaddr, chaddr, options):
+        Response = DHCPResponse(mtype, xID, mac, ciaddr, chaddr, options, self.Leases)#, requestedip)
+        sdata = Response.Assemble()
         
-                print("Send DHCP offer.")
-                data = DHCP_server.offer_get()
-                s.sendto(data, dest)
-                while True:
-                    try:
-                        print("Wait DHCP request.")
-                        data, address = s.recvfrom(MAX_BYTES)
-                        print("Receive DHCP request.")
-                        #print(data)
+        print('Responding with TYPE: {}'.format(mtype))
+        if (mtype == 3 and ciaddr != '0.0.0.0'):
+            print('Sent {}:{}'.format(ciaddr, 68))
+            self.s.sendto(sdata, (ciaddr, 68))
+        elif (mtype == 1 or mtype = 3):
+            print('Sent {}:{}'.format('255.255.255.255', 68))
+            self.s.sendto(sdata, ('255.255.255.255', 68))
 
-                        print("Send DHCP pack.\n")
-                        data = DHCP_server.pack_get()
-                        s.sendto(data, dest)
-                        break
-                    except:
-                        raise
-            except:
-                raise
+        print('=' * 32)
 
-    def offer_get():
+    def Parse(self, data):
+#        print(data)
+        options = []
+        b = 0
+        vsend = 0
+        for byte in data:
+            b += 1
+            currentbyte = data[b - 1]
+            if (currentbyte == 60):
+                optlen = data[b]
+                vendorspec = data[b + 1:b + 1 + optlen]
+                vsend = b + 1 + optlen
+            elif (b > vsend):
+                if (currentbyte == 55):
+                    b -= 1
+                    break  
 
-        OP = bytes([0x02])
-        HTYPE = bytes([0x01])
-        HLEN = bytes([0x06])
-        HOPS = bytes([0x00])
-        XID = bytes([0x39, 0x03, 0xF3, 0x26])
-        SECS = bytes([0x00, 0x00])
-        FLAGS = bytes([0x00, 0x00])
-        CIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        YIADDR = bytes([0xC0, 0xA8, 0x01, 0x64]) #192.168.1.100
-        SIADDR = bytes([0xC0, 0xA8, 0x01, 0x01]) #192.168.1.1
-        GIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR1 = bytes([0x00, 0x05, 0x3C, 0x04]) 
-        CHADDR2 = bytes([0x8D, 0x59, 0x00, 0x00])
-        CHADDR3 = bytes([0x00, 0x00, 0x00, 0x00]) 
-        CHADDR4 = bytes([0x00, 0x00, 0x00, 0x00]) 
-        CHADDR5 = bytes(192)
-        Magiccookie = bytes([0x63, 0x82, 0x53, 0x63])
-        DHCPOptions1 = bytes([53 , 1 , 2]) # DHCP Offer
-        DHCPOptions2 = bytes([1 , 4 , 0xFF, 0xFF, 0xFF, 0x00]) #255.255.255.0 subnet mask
-        DHCPOptions3 = bytes([3 , 4 , 0xC0, 0xA8, 0x01, 0x01]) #192.168.1.1 router
-        DHCPOptions4 = bytes([51 , 4 , 0x00, 0x01, 0x51, 0x80]) #86400s(1 day) IP address lease time
-        DHCPOptions5 = bytes([54 , 4 , 0xC0, 0xA8, 0x01, 0x01]) # DHCP server
+        bptype  = data[0]
+        hwtype = data[1]
+        hwlen = data[2]
+        xID = data[4:8]
+        ciaddr = data[11:15]
+        mac = data[28:28+6] # MAC ONLY
+        chaddr = data[28:28+16]
+        mcookie = data[236:240]
+        dhcpm = data[240]
+        mlen = data[241]
+        mtype = data[242]
         
-        package = OP + HTYPE + HLEN + HOPS + XID + SECS + FLAGS + CIADDR +YIADDR + SIADDR + GIADDR + CHADDR1 + CHADDR2 + CHADDR3 + CHADDR4 + CHADDR5 + Magiccookie + DHCPOptions1 + DHCPOptions2 + DHCPOptions3 + DHCPOptions4 + DHCPOptions5
+        
+        mac = struct.unpack("!6c", mac)
+        m = []
+        for byte in mac:
+            m.append(byte.hex())
 
-        return package
-	
-    def pack_get():
-        OP = bytes([0x02])
-        HTYPE = bytes([0x01])
-        HLEN = bytes([0x06])
-        HOPS = bytes([0x00])
-        XID = bytes([0x39, 0x03, 0xF3, 0x26])
-        SECS = bytes([0x00, 0x00])
-        FLAGS = bytes([0x00, 0x00])
-        CIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        YIADDR = bytes([0xC0, 0xA8, 0x01, 0x64])
-        SIADDR = bytes([0xC0, 0xA8, 0x01, 0x01])
-        GIADDR = bytes([0x00, 0x00, 0x00, 0x00])
-        CHADDR1 = bytes([0x00, 0x05, 0x3C, 0x04]) 
-        CHADDR2 = bytes([0x8D, 0x59, 0x00, 0x00])
-        CHADDR3 = bytes([0x00, 0x00, 0x00, 0x00]) 
-        CHADDR4 = bytes([0x00, 0x00, 0x00, 0x00]) 
-        CHADDR5 = bytes(192)
-        Magiccookie = bytes([0x63, 0x82, 0x53, 0x63])
-        DHCPOptions1 = bytes([53 , 1 , 5]) #DHCP ACK(value = 5)
-        DHCPOptions2 = bytes([1 , 4 , 0xFF, 0xFF, 0xFF, 0x00]) #255.255.255.0 subnet mask
-        DHCPOptions3 = bytes([3 , 4 , 0xC0, 0xA8, 0x01, 0x01]) #192.168.1.1 router
-        DHCPOptions4 = bytes([51 , 4 , 0x00, 0x01, 0x51, 0x80]) #86400s(1 day) IP address lease time
-        DHCPOptions5 = bytes([54 , 4 , 0xC0, 0xA8, 0x01, 0x01]) #DHCP server
-	
-        package = OP + HTYPE + HLEN + HOPS + XID + SECS + FLAGS + CIADDR +YIADDR + SIADDR + GIADDR + CHADDR1 + CHADDR2 + CHADDR3 + CHADDR4 + CHADDR5 + Magiccookie + DHCPOptions1 + DHCPOptions2 + DHCPOptions3 + DHCPOptions4 + DHCPOptions5
-
-        return package
-
-
+        cia = struct.unpack("!4B", ciaddr)
+        
+        mac = '{}:{}:{}:{}:{}:{}'.format(m[0], m[1], m[2], m[3], m[4], m[5])
+        ciaddr = '{}.{}.{}.{}'.format(cia[0], cia[1], cia[2], cia[3])
+                    
+        paramreq = data[b]
+        paramlen = data[b + 1]
+        paramitems = data[b + 2:b + 2 + paramlen]
+        
+        for byte in paramitems:
+            options.append(byte)
+        
+        print('MTYPE: {}'.format(mtype))
+#        print('xID: {}'.format(xID))
+#        print('CHADDR: {}'.format(chaddr))
+#        print('OPTIONS: {}'.format(options))
+        return(mtype, xID, mac, ciaddr, chaddr, options)
+        
 if __name__ == '__main__':
-    dhcp_server = DHCP_server()
-dhcp_server.server()
+    DHCPServer = DHCPServer()
+    DHCPServer.Start()

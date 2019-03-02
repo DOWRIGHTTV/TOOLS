@@ -2,7 +2,7 @@
 
 
 from subprocess import run
-from interface_ip import *
+from interface_info import *
 from config import *
 
 class IPTables:
@@ -46,6 +46,7 @@ class IPTables:
             run('iptables -A INPUT -p udp --dport 53 -j {}'.format(chain), shell=True) # DNS Query pushed to Custom chains for inspection
         run('iptables -A INPUT -i {} -p icmp --icmp-type any -j ACCEPT'.format(INIFACE), shell=True) # Allow ICMP to Firewall
         run('iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT', shell=True) # Tracking connection state for return traffic from WAN back Firewall itself
+        run('iptables -A INPUT -i {} -p udp --dport 67 -j ACCEPT'.format(INIFACE), shell=True) # DNS Server listening port
         run('iptables -A INPUT -i {} -p udp --dport 53 -j ACCEPT'.format(INIFACE), shell=True) # DNS Query( To firewall DNS Relay) is allowed if chains return/do not block
         run('iptables -A INPUT -i {} -p tcp --dport 443 -j ACCEPT'.format(INIFACE), shell=True) # Allowing HTTPS to Firewalls Web server (internal only)
         run('iptables -A INPUT -i {} -p tcp --dport 443 -j ACCEPT'.format(INIFACE), shell=True) # Allowing HTTP to Firewalls Web server (internal only)

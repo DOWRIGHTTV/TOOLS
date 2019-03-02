@@ -7,7 +7,8 @@ import time
 import threading
 
 from socket import *
-from interface_ip import *
+from config import *
+from interface_info import Interface
 
 
 class DNSRelay:

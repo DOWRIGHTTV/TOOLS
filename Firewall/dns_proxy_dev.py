@@ -11,6 +11,7 @@ import argparse
 import multiprocessing
 
 from interface_info import *
+from dnx_dbconnector import SQLConnector as DBConnector
 from subprocess import run
 from dns_proxy_response import DNSResponse
 from config import HOMEDIR, INIFACE
@@ -20,6 +21,7 @@ from sys import argv
 class DNSProxy:
     def __init__(self):
         Int = Interface()
+        self.DB = DBconnector()
         self.insideip = Int.IP(INIFACE)
         self.homedir = HOMEDIR
         self.iface = INIFACE
@@ -27,6 +29,7 @@ class DNSProxy:
         self.urldict = {}
         
     def Start(self):
+        self.DB.Cleaner
         self.Dictload()
         self.Proxy()
     
@@ -54,30 +57,33 @@ class DNSProxy:
        
     def url_check(self, packet):
         p = packet
-#        start = time.time()
+        hittime = time.time()
         try:
             reQ = p.qname
             if ('www' not in reQ):
                 reQ2 = 'www.{}'.format(reQ)            
             if (reQ in self.urldict or reQ2 in self.urldict):
-                urL = self.urldict[reQ][0]
+                url = self.urldict[reQ][0]
+                category = self.urldict[reQ][1]
                 if (self.urldict[reQ][2] == 0):
                     if (self.urldict[reQ][1] == 'malicious'):
                         self.urldict[reQ][2] += 1
-                        run('iptables -I MALICIOUS -m string --hex-string "{}" --algo bm -j DROP'.format(urL), shell=True)
+                        run('iptables -I MALICIOUS -m string --hex-string "{}" --algo bm -j DROP'.format(url), shell=True)
                     else:
                         self.urldict[reQ][2] += 1
-                        run('iptables -I BLACKLIST -m string --hex-string "{}" --algo bm -j DROP'.format(urL), shell=True)
+                        run('iptables -I BLACKLIST -m string --hex-string "{}" --algo bm -j DROP'.format(url), shell=True)                    
 #                    end = time.time()
 #                    print(end - start)
                     DNS = DNSResponse(self.iface, packet)
                     multiprocessing.Process(target=DNS.Response).start()
+                    self.DBC.Input(url, category, hittime)
 #                    DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall'.format(reQ))
                 else:
                     self.urldict[reQ][2] += 1
                     DNS = DNSResponse(self.iface, self.insideip, packet)
                     multiprocessing.Process(target=DNS.Response).start()
+                    self.DBC.Input(url, category, hittime)
 #                    DNR.DNS_Response(self.iface, packet)
                     print('Pointing {} to Firewall. already blocked.'.format(reQ))
         except Exception as E:

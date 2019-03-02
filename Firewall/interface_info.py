@@ -1,17 +1,17 @@
 #!/usr/bin/python3
 
 import subprocess
-
+from config import INIFACE
 
 
 class Interface:
     def IP(self, interface):
-        i = 0
         output = subprocess.check_output('ifconfig {}'.format(interface), shell=True).decode()
         output = output.splitlines(8)
         for line in output:
-            if('inet' in line and i == 0):
-                i += 1
+            if('inet6' in line):
+                pass
+            elif('inet' in line):
                 line = line.strip().split(' ')
                 ip = line[1]
 #                print(ip)
@@ -30,19 +30,34 @@ class Interface:
                 return(mtu)
 
     def Netmask(self, interface):
-        i = 0
         output = subprocess.check_output('ifconfig {}'.format(interface), shell=True).decode()
         output = output.splitlines(8)
         for line in output:
-            if('netmask' in line):
-                i += 1
+            if('inet6' in line):
+                pass        
+            elif('netmask' in line):
                 line = line.strip().split(' ')
                 netmask = line[4]
 #                print(netmask)
                 return(netmask)
-                
+
+    def Broadcast(self, interface):
+        output = subprocess.check_output('ifconfig {}'.format(interface), shell=True).decode()
+        output = output.splitlines(8)
+        for line in output:
+            if('inet6' in line):
+                pass        
+            elif('broadcast' in line):
+                line = line.strip().split(' ')
+                broadcast = line[7]
+#                print(broadcast)
+                return(broadcast)
+                                
 if __name__ == '__main__':
     Int = Interface()
-    Int.WanIP()
-    Int.InsideIP()
+    Int.IP(INIFACE)
+    Int.MTU(INIFACE)
+    Int.Netmask(INIFACE)
+    Int.Broadcast(INIFACE)
+    
 

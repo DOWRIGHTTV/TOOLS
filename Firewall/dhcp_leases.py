@@ -101,8 +101,8 @@ class DHCPLeases:
 
     def Release(self, ip, mac):
         try:
-            if (self.leasetable[ip] != None):
-                if (self.leasetable[ip][0] == mac):
+            if (self.leasetable[ip] is not None):
+                if (self.leasetable[ip][1] == mac):
                     print('Releasing {} : {} from table'.format(ip, mac))
                     self.leasetable[ip] = None
             else:

@@ -49,8 +49,8 @@ class DHCPServer:
             try:
                 Parse = DHCPParser(self.interfaceinfo)
                 self.rdata, self.addr = self.s.recvfrom(1024)
-                self.addr, port = self.addr
-                print('Received from {}:{}'.format(self.addr, port))
+                addr, port = self.addr
+                print('Received from {}:{}'.format(addr, port))
                 mtype, xID, mac, ciaddr, chaddr, options = Parse.Data(self.rdata)
                 options = Parse.Options(options)
                 threading.Thread(target=self.Response, args=(mtype, xID, mac, ciaddr, chaddr, options)).start()
@@ -59,15 +59,16 @@ class DHCPServer:
                 
     def Response(self, mtype, xID, mac, ciaddr, chaddr, options):
         if (mac in self.ongoing and self.ongoing[mac] != xID):
+            #options = {}
             options[53] = [1, 6]
             self.SendResponse(xID, mac, ciaddr, chaddr, options)
-        elif mtype == 1:
+        elif mtype == 1: # b'\x01'
             options[53] = [1, 2]
             self.SendResponse(xID, mac, ciaddr, chaddr, options)
-        elif mtype == 3:
+        elif mtype == 3: # b'\x03'
             options[53] = [1, 5]
             self.SendResponse(xID, mac, ciaddr, chaddr, options)
-        elif mtype == 7:
+        elif mtype == 7: # b'\x07'
             self.Leases.Release(ciaddr, mac)
                     
     def SendResponse(self, xID, mac, ciaddr, chaddr, options):
@@ -80,8 +81,8 @@ class DHCPServer:
         Response = DHCPResponse(xID, mac, ciaddr, chaddr, options, self.Leases)
         sdata = Response.Assemble()   
         if (mtype in {2,5,6}):
-            if (self.addr != '0.0.0.0'):
-                print('Sent TYPE: {} to {}:{}'.format(mtype, self.addr, 68))
+            if (ciaddr != '0.0.0.0'):
+                print('Sent TYPE: {} to {}:{}'.format(mtype, ciaddr, 68))
                 self.s.sendto(sdata, (ciaddr, 68))
             else:
                 print('Sent TYPE: {} to {}:{}'.format(mtype, '255.255.255.255', 68))
@@ -118,6 +119,7 @@ class DHCPParser:
         self.optnums = [1, 3, 6, 26, 28, 51, 58, 59] # 54,
         self.optnames = ['subnetmask', 'router', 'dnsserver', 'mtu', 'broadcast',
                     'leasetime', 'renewtime', 'rebindtime']
+                    #'dhservident', 'mtypeopt']
                 
         self.subnetmask = [4, inet_aton(self.netmask)]         # OPT 1
 #        self.router = [4, inet_aton('192.168.5.1')]           # OPT 3        
@@ -150,13 +152,27 @@ class DHCPParser:
         return self.serveroptions
         
     def Data(self, data):
+#        options = []
         options = OrderedDict()
-        
+        b = 0
+        vsend = 0
+        for byte in data:
+            b += 1
+            currentbyte = data[b - 1]
+            if (currentbyte == 60):
+                optlen = data[b]
+                vendorspec = data[b + 1:b + 1 + optlen]
+                vsend = b + 1 + optlen
+            elif (b > vsend):
+                if (currentbyte == 55):
+                    b -= 1
+                    break
+
         bptype  = data[0]
         hwtype = data[1]
         hwlen = data[2]
         xID = data[4:8]
-        ciaddr = data[12:16]
+        ciaddr = data[11:15]
         mac = data[28:28+6] # MAC ADDR ONLY
         chaddr = data[28:28+16]
         mcookie = data[236:240]
@@ -175,18 +191,18 @@ class DHCPParser:
         ciaddr = '{}.{}.{}.{}'.format(cia[0], cia[1], cia[2], cia[3])
         
         if mtype not in {7}:
-            for b, byte in enumerate(reversed(data), 1):
-                if (byte == 55):
-                    paramreq = data[-(b)]
-                    paramlen = data[-(b-1)]
-                    for opt in data[-(b-2):-(b-2) + paramlen]:
-                        options[opt] = None
-                    break
+            paramreq = data[b]
+            paramlen = data[b + 1]
+            paramitems = data[b + 2:b + 2 + paramlen]
+        
+            for byte in paramitems:
+#                options.append(byte)
+                options[byte] = None
         else:
-            pass        
+            pass
+        
         
         print('MTYPE: {}'.format(mtype))
-        print('CIADDR: {}'.format(ciaddr))
         return(mtype, xID, mac, ciaddr, chaddr, options)
         
 if __name__ == '__main__':
