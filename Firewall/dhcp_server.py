@@ -18,7 +18,7 @@ class DHCPServer:
         self.ongoing = {}
 
     def Start(self):
-        print("DHCP server is starting...")
+        print("[+] Building DHCP Range")
         
         # -- Creating Lease Dictionary -- #
         self.Leases.BuildRange()

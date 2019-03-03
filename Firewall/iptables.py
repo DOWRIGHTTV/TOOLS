@@ -61,4 +61,8 @@ class IPTables:
         run('iptables -t nat -A POSTROUTING -o {} -j MASQUERADE'.format(WANIFACE), shell=True) # Main masquerade rule. Inside to Outside
         run('echo 1 > /proc/sys/net/ipv4/ip_forward', shell=True) # Allow forwarding through system, required for NAT to work.
         
+
+if __name__ == '__main__':
+    IPT = IPTables()
+    IPT.Start()
         

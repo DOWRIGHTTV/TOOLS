@@ -14,19 +14,25 @@ class Sniffer:
         self.s.bind((self.iface, 3))
         
     def Start(self):
-        print('Sniffing on: {}'.format(self.iface))
+        print('[+] Sniffing on: {}'.format(self.iface))
         while True:
-            self.data, self.addr = self.s.recvfrom(1024)
-            Parse = Packet(self.data, self.addr)
-            packet = Parse.Start()
-            self.action(packet)
+            data, addr = self.s.recvfrom(1024)
+            try:
+                Packet = PacketParse(data, addr)
+                Packet.Parse()
+                if (Packet.qname) and (Packet.qtype == 1):
+                    self.action(Packet)
+            except AttributeError as AE:
+                pass
+            except Exception as E:
+                print(E)
                                         
 class PacketParse:
     def __init__(self, data, addr):
         self.data = data
         self.addr = addr
         
-    def Start(self):        
+    def Parse(self):
         try:
             self.udp()
             if (self.dport == 53):
@@ -34,11 +40,11 @@ class PacketParse:
                 self.dns()
                 if (self.qtype == 1):
                     self.ip()
-                    self.ethernet()
+                    self.ethernet()                                        
             else:
                 pass
         except Exception:
-            pass     
+            pass
                 
     def ethernet(self):   
         s = []
@@ -53,8 +59,7 @@ class PacketParse:
             d.append(byte.hex())
     
         self.smac = '{}:{}:{}:{}:{}:{}'.format(s[0], s[1], s[2], s[3], s[4], s[5])
-        self.dmac = '{}:{}:{}:{}:{}:{}'.format(d[0], d[1], d[2], d[3], d[4], d[5])
-    
+        self.dmac = '{}:{}:{}:{}:{}:{}'.format(d[0], d[1], d[2], d[3], d[4], d[5])    
     
     def ip(self):
         s = struct.unpack('!4B', self.data[26:30])
@@ -94,9 +99,5 @@ class PacketParse:
             else:
                 self.qname += chr(byte)
                 len -= 1
-#        print('---------------')
-#        print(self.qname)
-#        print(self.qtype)
-#        print('---------------')
       
         

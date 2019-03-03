@@ -10,14 +10,15 @@ class SQLConnector:
         self.db = 'dnxfwallproxy.db'
         self.table = 'PROXYBLOCKS'
         
-        self.conn = sqlite3.connect(self.db)
-        self.c = self.conn.cursor()
-        
         if not os.path.isfile (self.db):
             with open(self.db, 'w+') as db:
-                pass
-        self.c.execute('create table if not exists {} (URL, Category, Count, LastHit)'.format(self.table))
+                pass       
     
+    def Connect(self):
+        self.conn = sqlite3.connect(self.db)
+        self.c = self.conn.cursor()
+        self.c.execute('create table if not exists {} (URL, Category, Count, LastHit)'.format(self.table))
+     
     def Disconnect(self):
         try:
             self.conn.close()
@@ -60,19 +61,23 @@ class SQLConnector:
 
 if __name__ == '__main__':
 #    url = 'fbob.com'
-    while True:
-        timestamp = int(time.time())
-#        timestamp = 11
-        SQLC = SQLConnector()
-        cat = 'douchey'
-        url = input('list test url:' )
-        if url == 'top10':
-            results = SQLC.QueryTOP10()
-            for result in results:            
-                print(result[0],result[1],result[2],result[3],)
-        elif url == 'clean':
-            SQLC.Cleaner()       
-        else:
-            SQLC.Input(url, cat, timestamp)
+    ProxyDB = SQLConnector()
+    ProxyDB.Connect()
+    try:
+        while True:
+            timestamp = int(time.time())
+    #        timestamp = 11
+            cat = 'douchey'
+            url = input('list test url:' )
+            if url == 'top10':
+                results = ProxyDB.QueryTOP10()
+                for result in results:            
+                    print(result[0],result[1],result[2],result[3],)
+            elif url == 'clean':
+                SQLC.Cleaner()       
+            else:
+                SQLC.Input(url, cat, timestamp)
+    except KeyboardInterrupt:
+        ProxyDB.Disconnect()
 
 
