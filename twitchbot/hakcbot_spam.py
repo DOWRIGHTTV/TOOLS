@@ -9,9 +9,8 @@ class Spam:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
         self.tlddict = {}
-        self.permitlist = []
+        self.permitlist = set([])
         
-        self.regulars = ['bitnomadlive']
         self.whitelist = {'pastebin.com', 'twitch.tv', 'github.com'} # PEP 8 IS BULLSHIT......FAIL
         
         self.permituser = re.compile(r'permit\((.*?)\)')
@@ -32,15 +31,14 @@ class Spam:
             spam = self.urlFilter()
             return(spam)
         except Exception as E:
-            print(E)                
+            print(E)
       
     def urlFilter(self):
         urlcheck = {}
-#        print(self.msg)
         urlmatch = re.findall(self.urlregex, self.msg)
         if urlmatch:
-#            print('{} : {}'.format(self.user, self.subscriber))
-            if (self.user in self.regulars or self.subscriber == 'subscriber=1' \
+            print(self.permitlist)
+            if ('vip/1' in self.badges or self.subscriber == 'subscriber=1' \
             or self.user in self.permitlist):
                 pass
             else:            
@@ -55,7 +53,6 @@ class Spam:
                     return True
 
     def HakcbotPermit(self):
-#        if(self.user in modList):
         if (self.user == 'dowright'):
             if ('permit(' in self.msg):
                 if ('!' in self.msg or '/' in self.msg or '.' in self.msg or ' ' in self.msg):
@@ -68,9 +65,9 @@ class Spam:
                     self.sendMessage(message, response)
                          
     def HakcbotPermitThread(self, user):
-        self.permitlist.append(user)
+        self.permitlist.add(user.lower())
         time.sleep(60 * 3)
-        self.permitlist.remove(user)
+        self.permitlist.remove(user.lower())
 
     def format_line(self):
         try:
@@ -82,10 +79,11 @@ class Spam:
             self.user = user[0]
             self.msg = msg[2]
             self.subscriber = tags[8]
+            self.badges = tags[0]
             if ('subscriber' in self.subscriber):
                 pass
             else:
-                self.subscriber = tags[9]        
+                self.subscriber = tags[9]
         except Exception:
             raise Exception('Spam Format Line Error')            
     def sendMessage(self, message, response=None):

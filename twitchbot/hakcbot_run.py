@@ -1,10 +1,7 @@
 #!/usr/bin/python3
 
-import re
-
-import threading
-import multiprocessing
-import asyncio
+import threading, asyncio
+import re, json
 
 from config import *
 
@@ -54,17 +51,17 @@ class Run:
             print('Main Process Error: {}'.format(E))
     
     def Hakc2(self):
-        key = ['Sub', 'Commands', 'Discord', 'Github']
-        value = [99, 87, 59, 47]
+        cmd = ['Sub', 'Commands', 'Discord', 'Github']
+        timer = [99, 87, 59, 47]
         
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             loop.run_until_complete(asyncio.gather(
-            self.Automate.Timers(key[0], value[0]),
-            self.Automate.Timers(key[1], value[1]),
-            self.Automate.Timers(key[2], value[2]),
-            self.Automate.Timers(key[3], value[3])))
+            self.Automate.Timers(cmd[0], timer[0]),
+            self.Automate.Timers(cmd[1], timer[1]),
+            self.Automate.Timers(cmd[2], timer[2]),
+            self.Automate.Timers(cmd[3], timer[3])))
             
         except Exception as E:
             print('AsyncIO General Error')
@@ -74,14 +71,18 @@ class Automate:
         self.Execute = Execute(Hakcbot)
         
         self.linecount = 0
+        
+        with open('commands.json', 'r') as cmds:
+            self.commands = json.load(cmds)
                 
-    async def Timers(self, key, value):
+    async def Timers(self, cmd, timer):
         try:
+            message = self.commands[cmd]['message']
             while True:
-                await asyncio.sleep(60 * value)
-                print(self.linecount)
+                await asyncio.sleep(60 * timer)
+                print('Line Count: {}'.format(self.linecount))
                 if (self.linecount >= 3):
-                    eval('self.Execute.{}()'.format(key))
+                    self.Execute.sendMessage(message)
                 else:
                     pass
         except Exception as E:

@@ -6,16 +6,18 @@ import threading
 from config import *
 import time
 import requests
+import json
 
 uList = []
 
 class Execute:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
-        self.regusr = r'yourmom\((.*?)\)'
-        self.regusr3 = r'yourmum\((.*?)\)'
-        self.regflag = r'flag\((.*?)\)'
-        self.regunflag = r'flag\((.*?)\)'
+        self.regusr = re.compile(r'yourmom\((.*?)\)')
+        self.regusr3 = re.compile(r'yourmum\((.*?)\)')
+        self.regflag = re.compile(r'flag\((.*?)\)')
+        self.regunflag = re.compile(r'flag\((.*?)\)')
+        self.regpraise = re.compile(r'praise\((.*?)\)')
         
         self.msgreg = re.compile(r'user-type=(.*)')
         
@@ -28,9 +30,13 @@ class Execute:
         self.hakcuptime = True
         self.hakctime = True
         self.hakcplaylist = True
-        self.hakcparrot = True        
+        self.hakcparrot = True   
+        self.hakcpraise = True             
         self.hakcyourmom = True
         self.hakcyourmum = True
+        
+        with open('commands.json', 'r') as cmds:
+            self.commands = json.load(cmds)
                 
     def Main(self, line):
         self.line = line
@@ -42,101 +48,55 @@ class Execute:
             except Exception:
                 pass
             
-            if ('hakcbot()' in self.msg and self.hakcinfo == True):
-                command, CD = self.HakcbotInfo()
-            elif ('commands()' in self.msg and self.hakccommands == True):
-                command, CD = self.Commands()
-            elif ('youtube()' in self.msg and self.hakcyoutube == True):
-                command, CD = self.Youtube()
-            elif ('discord()' in self.msg and self.hakcdiscord == True):
-                command, CD = self.Discord()
-            elif ('github()' in self.msg and self.hakcgithub == True):
-               command, CD =  self.Github()
-            elif ('sub()' in self.msg and self.hakcgithub == True):
-               command, CD =  self.Sub()
-            elif ('uptime()' in self.msg and self.hakcuptime == True):
-               command, CD =  threading.Thread(target=self.UpTime).start()
-            elif ('time()' in self.msg and self.hakctime == True):
-               command, CD =  self.Time()
-            elif ('playlist()' in self.msg and self.hakcplaylist == True):
-               command, CD =  self.Playlist()
-            elif ('parrot()' in self.msg and self.hakcparrot == True):
-               command, CD =  self.Parrot()
+            commands = {'Commands', 'Youtube', 'Discord', 'Github',
+                        'Sub', 'Uptime', 'Time', 'Playlist', 'Parrot'}
+            
+            msg = self.msg.split(' ')
+            go = False
+            for word in msg:
+                if (go != True):
+                    for cmd in commands:
+                        if '{}()'.format(cmd).lower() == word.lower().strip('\r') \
+                        and eval('self.hakc{}'.format(cmd).lower()) == True:
+                                if '{}()'.format(cmd).lower() == 'uptime()':
+                                    threading.Thread(target=self.Uptime, args=(cmd,)).start()
+                                else:
+                                    command, CD = self.Command(cmd)
+                                go = True
                            
             if (command):
                 threading.Thread(target=self.Cooldown, args=(command, CD)).start()
             else:
                 pass           
         except Exception as E:
-            pass
+            print(E)
+            
+    def Command(self, cmd):
+        name = self.commands[cmd]['CD Name'] 
+        CD = self.commands[cmd]['CD Time']           
+        if (cmd == 'Time'):
+            message = self.commands[cmd]['message']
+            current_time = time.localtime()
+            ltime = time.strftime('%H:%M:%S', current_time)
+            message = '{} {}'.format(message, ltime)
+            print('hakcbot: {}'.format(message))
+            self.sendMessage(message)
+            return(name, CD)
+        else:
+            message = self.commands[cmd]['message']
+            print('hakcbot: {}'.format(message))
+            self.sendMessage(message)
+            return(name, CD)
 
-                                               
-    def HakcbotInfo(self):
-        message = 'I will be finishing this bot later on stream'
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakcinfo', 180)
-                      
-    def Commands(self):
-        message = '<c> playlist() > music. - discord() > discord link - github() > github link - parrot() > why I use parrot - sub() > subscirbe link - commands() > command list :D </c>'
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakccommands', 180)
-    
-    def Youtube(self):
-        message = "Check out DOWRIGHT's YouTube here: https://www.youtube.com/channel/UCKAiTcsiD50oZvf9h0xbvCg"
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakcyoutube', 180)
-        
-    def Discord(self):
-        message = 'Join the Discord --> https://Discord.gg/KSCHNfa'
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakcdiscord', 180)
-        
-    def Github(self):
-        message = "Check out DOWRIGHT's GitHub here: https://github.com/DOWRIGHTTV/TOOLS"
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakcgithub', 180)
-
-    def Sub(self):
-        message = "Subscribe to DOWRIGHT here: https://www.twitch.tv/subs/dowright"
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakcsub', 180)        
-
-    def UpTime(self):
+    def Uptime(self, cmd):
         uptime = requests.get("https://decapi.me/twitch/uptime?channel=dowright")
         uptime = uptime.text.strip('\n')
-        message = "DOWRIGHT has been live for {}".format(uptime)
-        self.sendMessage(message)
+        message = self.commands[cmd]['message']
+        message = '{} {}'.format(message, uptime)
         print('hakcbot: {}'.format(message))
-        return('hakcuptime', 300)
-                            
-    def Time(self):
-        current_time = time.localtime()
-        time.strftime('%Y-%m-%d %A', current_time)
-        message = "DOWRIGHT's time is {}".format(time.strftime('%H:%M:%S', current_time))
         self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakctime', 300)
-        
-    def Playlist(self):
-        message = "Main Playlist -> https://www.youtube.com/watch?v=4ZxhlnHl9rE&list=PLDfKAXSi6kUbh7mE6gnPrkBM_yVJFqX-U"
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakcplaylist', 180)
-
-    def Parrot(self):
-        message = "I prefer Parrot OS because it comes with all Airgeddon options, \
-        its preloaded with OpenVAS setup scripts(Vuln Scan), and the general user \
-        experience is great. https://www.parrotsec.org/"
-        self.sendMessage(message)
-        print('hakcbot: {}'.format(message))
-        return('hakcparrot', 180)  
-        
+        self.Cooldown(self.commands[cmd]['CD Name'], self.commands[cmd]['CD Time'])   
+                    
     def Comms(self):
 #        if(self.user in modList):
         if (self.user == 'dowright'):
@@ -163,8 +123,22 @@ class Execute:
                 message = 'lol, {} iz a nerd'.format(user)
                 self.sendMessage(message)
                 print('hakcbot: {}'.format(message))
+                
+        if ('praise(' in self.msg and self.hakcpraise == True):
+            if ('!' in self.msg or '/' in self.msg or '.' in self.msg or ' ' in self.msg):
+                pass
+            else:    
+                self.arG = re.findall(self.regpraise, self.msg)[0]
+                if (self.arG == 'thesun'):
+                    message = "\ [T] /"
+                    self.sendMessage(message)
+                else:
+                    message = 'Can only praise the sun.'
+                    self.sendMessage(message)
+                print('hakcbot: {}'.format(message))
+                return('hakcpraise', 30)
               
-        if ('yourmom(' in self.msg and self.hakcyourmom == True):
+        elif ('yourmom(' in self.msg and self.hakcyourmom == True):
             if ('!' in self.msg or '/' in self.msg or '.' in self.msg or ' ' in self.msg):
                 pass
             else:    
