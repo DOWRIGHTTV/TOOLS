@@ -57,7 +57,7 @@ class Execute:
                 if (go != True):
                     for cmd in commands:
                         if '{}()'.format(cmd).lower() == word.lower().strip('\r') \
-                        and eval('self.hakc{}'.format(cmd).lower()) == True:
+                        and getattr(self, 'hakc{}'.format(cmd).lower()):
                                 if '{}()'.format(cmd).lower() == 'uptime()':
                                     threading.Thread(target=self.Uptime, args=(cmd,)).start()
                                 else:
