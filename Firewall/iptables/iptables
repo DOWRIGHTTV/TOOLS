@@ -4,7 +4,7 @@ sudo iptables -N WHITELIST
 sudo iptables -N BLACKLIST
 
 
-sudo iptables -A FORWARD -p udp --destination-port 53 -j MALICOUS
+sudo iptables -A FORWARD -p udp --destination-port 53 -j MALICIOUS
 sudo iptables -A FORWARD -p udp --destination-port 53 -j WHITELIST
 sudo iptables -A FORWARD -p udp --destination-port 53 -j BLACKLIST
 
