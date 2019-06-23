@@ -41,7 +41,8 @@ class Main:
 				Gat.tor_LocalList()
 			else:
 				print('local file required if not using -g/--get option')   
-		Cisco_ACLs(Gat)
+		ACL = Cisco_ACLs()
+		ACL.Create()
 			 
 ## Collecting TOR Exit node, either from URL Above or Local File
 class Gathering:
@@ -68,39 +69,28 @@ class Gathering:
 			print(('grabbed from %s' % (f)))
 
 class Cisco_ACLs:
-	def __init__(self, Gat):
-		self.Gat = Gat
-		if (s):
-			self.c_standard()
-		elif (e):
-			self.c_extended()
+	def __init__(self):
+	    pass
 			
-	def c_standard(self):
+	def Create(self):
 		with open(o, 'w+') as tACL:
-			if (l):
+			if (s):
 				tACL.write('ip access-list standard TOR_BLOCK_IN')	
 				for IP in self.Gat.ipList:
-					tACL.write('\ndeny host ' + IP + ' log')
+				    if (l):
+					    tACL.write('\ndeny host ' + IP + ' log')
+					else:
+					    tACL.write('\ndeny host ' + IP)   
 				tACL.write('\npermit any')
-			elif (not l):
-				tACL.write('ip access-list standard TOR_BLOCK_IN')	
-				for IP in self.Gat.ipList:
-					tACL.write('\ndeny host ' + IP)
-				tACL.write('\npermit any')
-
-	def c_extended(self):
-		with open(o, 'w+') as tACL:
-			if (l):
-				tACL.write('ip access-list extended TOR_BLOCK_IN')
+			elif (e):
+			    tACL.write('ip access-list extended TOR_BLOCK_IN')    
 				for IP in self.Gat.ipList:
 					tACL.write('\ndeny ip host {} any log'.format(IP))
-				tACL.write('\npermit ip any any')
-			elif (not l):
-				tACL.write('ip access-list extended TOR_BLOCK_IN')	
-				for IP in self.Gat.ipList:
-					tACL.write('\ndeny ip host {} any'.format(IP))
-				tACL.write('\npermit ip any any')
-
+					if (l):
+					    tACL.write('\ndeny ip host {} any log'.format(IP))
+					else:
+					    tACL.write('\ndeny ip host {} any'.format(IP))					    				    
+			    tACL.write('\ndeny ip host {} any'.format(IP))
 
 if __name__ == '__main__':
 	try:
