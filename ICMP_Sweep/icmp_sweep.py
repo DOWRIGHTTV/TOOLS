@@ -3,61 +3,75 @@
 import time
 import random
 import threading
-import os
+import os, sys
 import subprocess
 
-from netaddr import IPNetwork
+from ipaddress import IPv4Network
 
 
 class PingSweep:
-    def __init__(self, iprange):
-        self.upList = []
-        self.ipList = []
-        self.iprange = iprange
+    def __init__(self, subnet):
+        try:
+            self.ip_network = IPv4Network(subnet).hosts()
+        except Exception:
+            raise TypeError('invalid network subnet. ex. 192.168.100.0/24')
 
-    def Start(self):
-        self.Main()
-        self.Complete()
+        self.reachable_hosts = []
 
-    def Threads(self, th, ipa):
-        result = self.Worker(th, ipa)
-        if (result == 0):
-            self.upList.append(ipa)
+    def __enter__(self):
+        self.devnull = open(os.devnull, 'w')
+        return self
 
-    def Worker(self, thread, target):
-        DEVNULL = open(os.devnull, 'wb')
-        res = subprocess.call(['ping', '-c', '1', str(target)], stdout = DEVNULL)	
-        return(res)
+    def __exit__(self, exc_type, exc_val, traceback):
+        self.devnull.close()
 
-    def Main(self):
-        th = 0
-        for t in IPNetwork(self.iprange):
-            if (th == 0):
-                th +=1
-            else:
-                self.ipList.append(t)
-                th +=1
+    def start(self):
+        self.main()
+        self.complete()
 
-        th2 = 1
-        for ipa in self.ipList:
-            if (th2 < th-2):
-                th2 += 1
-                threading.Thread(target=self.Threads, args=(th, ipa)).start()
-            else:
-                pass
+    def thread_handler(self, ip_address):
+        error = self.icmp_worker(ip_address)
+        if (not error):
+            self.reachable_hosts.append(ip_address)
 
-    def Complete(self):
-        print('||FOLLOWING IPs ARE UP||')
-        print('-' * 24)
-        for ip in self.upList:
-            print(ip)
+    def icmp_worker(self, ip_address):
+        result = subprocess.run(f'ping -c 1 {ip_address}', shell=True, stdout=self.devnull, stderr=self.devnull)
+        return result.returncode
 
-def Main():
+    def main(self):
+        for ip_address in self.ip_network:
+            threading.Thread(target=self.thread_handler, args=(ip_address,)).start()
 
-    iprange = input('IP Range to scan: ')
-    PS = PingSweep(iprange)
-    PS.Start()
+    def complete(self):
+        if self.reachable_hosts:
+            print('||FOLLOWING IPs ARE UP||')
+            print('-' * 24)
+        else:
+            print('NO HOSTS RESPONDED :(.')
 
+        for ip_address in sorted(self.reachable_hosts):
+            print(ip_address)
+
+def scan_again():
+    while True:
+        user_input = input('Do another scan? [Y/n]: ').lower()
+        if (user_input in ['y', '']):
+            break
+        elif (user_input == 'n'):
+            os._exit(0)
+        else:
+            print('invalid entry. try again.')
+
+def main():
+    while True:
+        user_input = input('IP Range to scan: ')
+        try:
+            with PingSweep(user_input) as ping_sweep:
+                ping_sweep.start()
+        except TypeError as e:
+            print(e)
+        else:
+            scan_again()
 
 if __name__ == '__main__':
-    Main()
+    main()
